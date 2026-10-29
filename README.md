@@ -1,5 +1,7 @@
 # Workbench
 
+Live: https://workbench-sandy-nu.vercel.app
+
 An operations workbench for the monthly tax filing run, built around tasks. Every run and every return is a task, and the steps that complete a return hang off it. The data lives in Supabase (Postgres) and the app is one static page.
 
 ## What's here
