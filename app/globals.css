@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+/* Black and white. Colour only where it carries meaning: red is late, amber is at risk, green is done. */
+:root {
+  --bg: #ffffff;
+  --panel: #ffffff;
+  --ink: #0a0a0a;
+  --muted: #6b6b6b;
+  --line: #e5e5e5;
+  --soft: #f5f5f5;
+  --accent: #0a0a0a;
+  --accent-ink: #ffffff;
+  --good: #1f7a3a;
+  --warn: #8a5a00;
+  --bad: #b42318;
+  --info: #3a3a3a;
+  --good-bg: #ecf6ef;
+  --warn-bg: #fdf4e3;
+  --bad-bg: #fdecea;
+  --info-bg: #f0f0f0;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0a0a0a; --panel: #111111; --ink: #f2f2f2; --muted: #9a9a9a; --line: #262626; --soft: #1a1a1a;
+    --accent: #f2f2f2; --accent-ink: #0a0a0a;
+    --good: #6fcf8a; --warn: #e6b450; --bad: #f2877c; --info: #cfcfcf;
+    --good-bg: #13261a; --warn-bg: #2b2210; --bad-bg: #2d1412; --info-bg: #1f1f1f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0a0a0a; --panel: #111111; --ink: #f2f2f2; --muted: #9a9a9a; --line: #262626; --soft: #1a1a1a;
+  --accent: #f2f2f2; --accent-ink: #0a0a0a;
+  --good: #6fcf8a; --warn: #e6b450; --bad: #f2877c; --info: #cfcfcf;
+  --good-bg: #13261a; --warn-bg: #2b2210; --bad-bg: #2d1412; --info-bg: #1f1f1f;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-soft: var(--soft);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-good: var(--good);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+  --color-info: var(--info);
+  --color-good-bg: var(--good-bg);
+  --color-warn-bg: var(--warn-bg);
+  --color-bad-bg: var(--bad-bg);
+  --color-info-bg: var(--info-bg);
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+}
+
+body { background: var(--bg); color: var(--ink); font-family: var(--font-sans); font-size: 14px; }
+h1, h2, h3 { text-wrap: balance; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* small tables that aren't grids (runs, a return's history) share the grid's look */
+.grid-table { width: 100%; border-collapse: collapse; }
+.grid-table th { text-align: left; font-weight: 500; font-size: 12px; color: var(--muted); padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--soft); white-space: nowrap; }
+.grid-table td { padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.grid-table tr:last-child td { border-bottom: 0; }
+.grid-table tr:hover td { background: var(--soft); }
+.field { border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 4px; padding: 5px 8px; font: inherit; min-width: 0; }
+.btn { border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 4px; padding: 5px 10px; font: inherit; cursor: pointer; white-space: nowrap; }
+.btn:hover { background: var(--soft); }
+.btn-primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn-primary:hover { background: var(--accent); opacity: .85; }
+.btn:disabled { cursor: not-allowed; opacity: .4; }
