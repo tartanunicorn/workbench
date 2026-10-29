@@ -896,7 +896,7 @@ const IDENTITY = new Set(["link_id","ownership_id"]);           // ids Postgres 
 const BOOLS = new Set(["active","is_union","internal_review","systemic_fix"]);  // Yes/No in the app
 const STAMPS = new Set(["created_at","updated_at","deleted_at"]);
 const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
-const sb = window.supabase.createClient(window.WORKBENCH.supabaseUrl, window.WORKBENCH.supabaseKey);
+const sb = window.supabase.createClient(window.WORKBENCH.supabaseUrl, window.WORKBENCH.supabaseKey, { db: { schema: window.WORKBENCH.schema || "public" } });
 const SNAP = {};
 const p2 = n => String(n).padStart(2,"0");
 function toDb(k, v){
@@ -930,7 +930,7 @@ async function loadDb(){
       SNAP[sheet] = new Map(db[sheet].map(r => [rowKey(pk, r), rowJson(r)]));
     });
     db._missing = [];
-    if(!db.Runs.length){ emptyView(); return; }
+    if(!db.Runs.length && !db.Owners.length){ emptyView(); return; }
     DB = db; changes = 0; document.getElementById("saveBtn").textContent = "Save";
     compute(); route();
   }catch(e){ document.getElementById("main").innerHTML = `<div class="drop"><b>Could not load the database.</b><span class="note">${esc(e.message||String(e))}</span></div>`; }

@@ -22,10 +22,11 @@ An operations workbench for the monthly tax filing run, built around tasks. Ever
 ## Set up
 
 1. **Database.** Create a Supabase project. Run the two files in `supabase/migrations/` in order in the SQL editor, or run `supabase db push`.
-2. **Sign-in.** In Authentication → URL configuration, set the Site URL to the app's address (the Vercel URL, or `http://localhost:8000` locally). Add the same address to Redirect URLs.
-3. **Config.** Put the project URL and publishable (anon) key into `app/config.js`.
-4. **Data.** Either run `supabase/seed.sql` in the SQL editor, or open the app on the empty database, choose `data/sample_db.xlsx` and press Save.
-5. **Deploy.** Import the repo into Vercel. There is no build step: `vercel.json` serves `app/`.
+2. **Members.** Only emails in the `members` table can read or write: `insert into members (email) values ('you@company.com');`
+3. **Sign-in.** In Authentication → URL configuration, set the Site URL to the app's address (the Vercel URL, or `http://localhost:8000` locally). Add the same address to Redirect URLs.
+4. **Config.** Put the project URL and publishable (anon) key into `app/config.js`.
+5. **Data.** Either run `supabase/seed.sql` in the SQL editor, or open the app on the empty database, choose `data/sample_db.xlsx` and press Save.
+6. **Deploy.** Import the repo into Vercel. There is no build step: `vercel.json` serves `app/`.
 
 Locally: `cd app && python3 -m http.server 8000`.
 
