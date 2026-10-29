@@ -33,7 +33,7 @@ export default async function RunPage({ params }: { params: Promise<{ id: string
   return (
     <>
       <PageHead title={`${month(run.run_month)} run`}
-        sub={<>Periods {day(run.period_start)} – {day(run.period_end)} · as of {day(run.as_of)}, the plan expects stage {run.expected_stage}</>}>
+        sub={<>Periods {day(run.period_start)} – {day(run.period_end)} · as of {day(run.as_of)}, returns should be at stage {run.expected_stage}</>}>
         <Badge tone={run.status === "Open" ? "info" : "plain"}>{run.status}</Badge>
       </PageHead>
 
@@ -41,31 +41,31 @@ export default async function RunPage({ params }: { params: Promise<{ id: string
         <Stat label="Returns" value={n.toLocaleString()} href={r} />
         <Stat label={`Released (by ${day(run.release_by)})`} value={`${released.toLocaleString()}`} href={`${r}&stage=released`} />
         <Stat label={`Submitted (by ${day(run.submit_by)})`} value={submitted.toLocaleString()} href={`${r}&stage=submitted`} />
-        <Stat label="Tier A" value={(tiers.get("A") ?? 0).toLocaleString()} href={`${r}&tier=A`} />
-        <Stat label="Tier unknown" value={(tiers.get("?") ?? 0).toLocaleString()} href={`${r}&tier=%3F`} tone={(tiers.get("?") ?? 0) > 0 ? "warn" : undefined} />
+        <Stat label="Review tier A" value={(tiers.get("A") ?? 0).toLocaleString()} href={`${r}&tier=A`} />
+        <Stat label="Review tier ?" value={(tiers.get("?") ?? 0).toLocaleString()} href={`${r}&tier=%3F`} tone={(tiers.get("?") ?? 0) > 0 ? "warn" : undefined} />
         <Stat label="Overdue tasks" value={total(overdue.map((t) => ({ returns: t.tasks })))} href={`/tasks?run=${id}&due=Overdue`} tone={overdue.length ? "bad" : undefined} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Panel title="Where returns stand">
+        <Panel title="Returns by health">
           <ul className="divide-y divide-line">
             {flags.map(([flag, count]) => (
               <li key={flag}>
-                <Link href={`${r}&flag=${encodeURIComponent(flag)}`} className="flex items-center justify-between px-4 py-2 hover:bg-soft">
-                  <Badge tone={flagTone(flag)}>{flag || "No flag"}</Badge><span className="num">{count.toLocaleString()}</span>
+                <Link href={`${r}&health=${encodeURIComponent(flag)}`} className="flex items-center justify-between px-4 py-2 hover:bg-soft">
+                  <Badge tone={flagTone(flag)}>{flag || "Not known"}</Badge><span className="num">{count.toLocaleString()}</span>
                 </Link>
               </li>
             ))}
           </ul>
         </Panel>
 
-        <Panel title="By stage">
+        <Panel title="Returns by stage">
           <ul className="space-y-2 px-4 py-3">
             {stages.map((s) => (
               <li key={s.stage_n}>
-                <Link href={`${r}&stage=${s.stage_n}`} className="block hover:text-accent">
+                <Link href={`${r}&stage=${s.stage_n}`} className="block hover:underline">
                   <div className="flex justify-between text-sm"><span>{s.stage}</span><span className="num">{s.returns.toLocaleString()}</span></div>
-                  <div className="mt-1 h-1.5 rounded bg-soft"><div className="h-1.5 rounded bg-accent" style={{ width: `${n ? (s.returns / n) * 100 : 0}%` }} /></div>
+                  <div className="mt-1 h-1.5 rounded bg-soft"><div className="h-1.5 rounded bg-ink" style={{ width: `${n ? (s.returns / n) * 100 : 0}%` }} /></div>
                 </Link>
               </li>
             ))}

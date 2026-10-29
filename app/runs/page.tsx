@@ -30,7 +30,7 @@ export default async function RunsPage() {
                 const n = total(rows);
                 return (
                   <tr key={r.run_id}>
-                    <td><Link className="font-medium text-accent hover:underline" href={`/runs/${r.run_id}`}>{month(r.run_month)}</Link></td>
+                    <td><Link className="font-medium underline decoration-line underline-offset-2 hover:decoration-ink" href={`/runs/${r.run_id}`}>{month(r.run_month)}</Link></td>
                     <td><Badge tone={r.status === "Open" ? "info" : "plain"}>{r.status}</Badge></td>
                     <td className="num whitespace-nowrap text-muted">{day(r.period_start)} – {day(r.period_end)}</td>
                     <td className="num whitespace-nowrap">{day(r.release_by)}</td>
@@ -48,10 +48,10 @@ export default async function RunsPage() {
         <Panel title="Kick off the next run">
           <div className="space-y-3 px-4 py-3">
             {preview.exists ? (
-              <p className="text-muted">The {month(preview.run_month)} run already exists. <Link className="text-accent hover:underline" href={`/runs/${preview.run_id}`}>Open it</Link>.</p>
+              <p className="text-muted">The {month(preview.run_month)} run already exists. <Link className="underline decoration-line underline-offset-2 hover:decoration-ink" href={`/runs/${preview.run_id}`}>Open it</Link>.</p>
             ) : (
               <>
-                <p><span className="font-medium">{month(preview.run_month)}</span> would start with <span className="num font-medium">{preview.returns.toLocaleString()}</span> returns: every active registration with a period ending that month, each with its owners and checklist. The rules then decide which steps each return needs.</p>
+                <p><span className="font-medium">{month(preview.run_month)}</span> would start with <span className="num font-medium">{preview.returns.toLocaleString()}</span> returns: one for every active registration with a period ending that month, each with its owners and tasks. The rules then decide which tasks each return needs.</p>
                 <form action={kickOff} className="space-y-3">
                   <label className="flex items-start gap-2">
                     <input type="checkbox" name="confirm" value="yes" required className="mt-1" />

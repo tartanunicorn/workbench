@@ -18,7 +18,7 @@ export function Nav() {
         const on = path === href || path.startsWith(`${href}/`);
         return (
           <Link key={href} href={href}
-            className={`rounded-md px-2.5 py-1 ${on ? "bg-soft font-medium text-ink" : "text-muted hover:text-ink"}`}>
+            className={`rounded px-2.5 py-1 ${on ? "bg-soft font-medium text-ink" : "text-muted hover:text-ink"}`}>
             {label}
           </Link>
         );

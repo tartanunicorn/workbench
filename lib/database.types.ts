@@ -75,6 +75,13 @@ export type Database = {
             foreignKeyName: "balances_notices_issue_id_fkey"
             columns: ["issue_id"]
             isOneToOne: false
+            referencedRelation: "issue_grid"
+            referencedColumns: ["issue_id"]
+          },
+          {
+            foreignKeyName: "balances_notices_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
             referencedRelation: "issues"
             referencedColumns: ["issue_id"]
           },
@@ -250,6 +257,13 @@ export type Database = {
             foreignKeyName: "issue_links_issue_id_fkey"
             columns: ["issue_id"]
             isOneToOne: false
+            referencedRelation: "issue_grid"
+            referencedColumns: ["issue_id"]
+          },
+          {
+            foreignKeyName: "issue_links_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
             referencedRelation: "issues"
             referencedColumns: ["issue_id"]
           },
@@ -265,6 +279,13 @@ export type Database = {
             columns: ["return_id"]
             isOneToOne: false
             referencedRelation: "return_board"
+            referencedColumns: ["return_id"]
+          },
+          {
+            foreignKeyName: "issue_links_return_id_fkey"
+            columns: ["return_id"]
+            isOneToOne: false
+            referencedRelation: "return_grid"
             referencedColumns: ["return_id"]
           },
           {
@@ -432,6 +453,13 @@ export type Database = {
             foreignKeyName: "ownerships_issue_id_fkey"
             columns: ["issue_id"]
             isOneToOne: false
+            referencedRelation: "issue_grid"
+            referencedColumns: ["issue_id"]
+          },
+          {
+            foreignKeyName: "ownerships_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
             referencedRelation: "issues"
             referencedColumns: ["issue_id"]
           },
@@ -447,6 +475,13 @@ export type Database = {
             columns: ["return_id"]
             isOneToOne: false
             referencedRelation: "return_board"
+            referencedColumns: ["return_id"]
+          },
+          {
+            foreignKeyName: "ownerships_return_id_fkey"
+            columns: ["return_id"]
+            isOneToOne: false
+            referencedRelation: "return_grid"
             referencedColumns: ["return_id"]
           },
           {
@@ -489,6 +524,20 @@ export type Database = {
             columns: ["task_id"]
             isOneToOne: false
             referencedRelation: "task_board"
+            referencedColumns: ["task_id"]
+          },
+          {
+            foreignKeyName: "ownerships_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "task_grid"
+            referencedColumns: ["parent_id"]
+          },
+          {
+            foreignKeyName: "ownerships_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "task_grid"
             referencedColumns: ["task_id"]
           },
           {
@@ -683,6 +732,13 @@ export type Database = {
             columns: ["return_id"]
             isOneToOne: false
             referencedRelation: "return_board"
+            referencedColumns: ["return_id"]
+          },
+          {
+            foreignKeyName: "return_events_return_id_fkey"
+            columns: ["return_id"]
+            isOneToOne: false
+            referencedRelation: "return_grid"
             referencedColumns: ["return_id"]
           },
           {
@@ -929,6 +985,13 @@ export type Database = {
             foreignKeyName: "rule_results_return_id_fkey"
             columns: ["return_id"]
             isOneToOne: false
+            referencedRelation: "return_grid"
+            referencedColumns: ["return_id"]
+          },
+          {
+            foreignKeyName: "rule_results_return_id_fkey"
+            columns: ["return_id"]
+            isOneToOne: false
             referencedRelation: "returns"
             referencedColumns: ["return_id"]
           },
@@ -1127,6 +1190,20 @@ export type Database = {
             foreignKeyName: "task_relations_from_task_id_fkey"
             columns: ["from_task_id"]
             isOneToOne: false
+            referencedRelation: "task_grid"
+            referencedColumns: ["parent_id"]
+          },
+          {
+            foreignKeyName: "task_relations_from_task_id_fkey"
+            columns: ["from_task_id"]
+            isOneToOne: false
+            referencedRelation: "task_grid"
+            referencedColumns: ["task_id"]
+          },
+          {
+            foreignKeyName: "task_relations_from_task_id_fkey"
+            columns: ["from_task_id"]
+            isOneToOne: false
             referencedRelation: "tasks"
             referencedColumns: ["task_id"]
           },
@@ -1149,6 +1226,20 @@ export type Database = {
             columns: ["to_task_id"]
             isOneToOne: false
             referencedRelation: "task_board"
+            referencedColumns: ["task_id"]
+          },
+          {
+            foreignKeyName: "task_relations_to_task_id_fkey"
+            columns: ["to_task_id"]
+            isOneToOne: false
+            referencedRelation: "task_grid"
+            referencedColumns: ["parent_id"]
+          },
+          {
+            foreignKeyName: "task_relations_to_task_id_fkey"
+            columns: ["to_task_id"]
+            isOneToOne: false
+            referencedRelation: "task_grid"
             referencedColumns: ["task_id"]
           },
           {
@@ -1248,6 +1339,13 @@ export type Database = {
             foreignKeyName: "tasks_issue_id_fkey"
             columns: ["issue_id"]
             isOneToOne: false
+            referencedRelation: "issue_grid"
+            referencedColumns: ["issue_id"]
+          },
+          {
+            foreignKeyName: "tasks_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
             referencedRelation: "issues"
             referencedColumns: ["issue_id"]
           },
@@ -1263,6 +1361,13 @@ export type Database = {
             columns: ["return_id"]
             isOneToOne: false
             referencedRelation: "return_board"
+            referencedColumns: ["return_id"]
+          },
+          {
+            foreignKeyName: "tasks_return_id_fkey"
+            columns: ["return_id"]
+            isOneToOne: false
+            referencedRelation: "return_grid"
             referencedColumns: ["return_id"]
           },
           {
@@ -1318,6 +1423,20 @@ export type Database = {
             foreignKeyName: "tasks_template_id_fkey"
             columns: ["template_id"]
             isOneToOne: false
+            referencedRelation: "task_grid"
+            referencedColumns: ["parent_id"]
+          },
+          {
+            foreignKeyName: "tasks_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "task_grid"
+            referencedColumns: ["task_id"]
+          },
+          {
+            foreignKeyName: "tasks_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
             referencedRelation: "tasks"
             referencedColumns: ["task_id"]
           },
@@ -1325,6 +1444,48 @@ export type Database = {
       }
     }
     Views: {
+      issue_grid: {
+        Row: {
+          affects: string | null
+          category: string | null
+          description: string | null
+          detected_by: string | null
+          due_by: string | null
+          issue_id: string | null
+          opened_on: string | null
+          resolution: string | null
+          returns_affected: number | null
+          severity: string | null
+          status: string | null
+        }
+        Insert: {
+          affects?: never
+          category?: string | null
+          description?: string | null
+          detected_by?: string | null
+          due_by?: string | null
+          issue_id?: string | null
+          opened_on?: string | null
+          resolution?: string | null
+          returns_affected?: never
+          severity?: string | null
+          status?: string | null
+        }
+        Update: {
+          affects?: never
+          category?: string | null
+          description?: string | null
+          detected_by?: string | null
+          due_by?: string | null
+          issue_id?: string | null
+          opened_on?: string | null
+          resolution?: string | null
+          returns_affected?: never
+          severity?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       return_board: {
         Row: {
           account_ref: string | null
@@ -1409,6 +1570,56 @@ export type Database = {
           },
         ]
       }
+      return_grid: {
+        Row: {
+          calculated: number | null
+          collected: number | null
+          customer_name: string | null
+          flag: string | null
+          frequency: string | null
+          gap: number | null
+          kind: string | null
+          open_issues: number | null
+          period_end: string | null
+          period_start: string | null
+          place_code: string | null
+          preparer: string | null
+          preparer_name: string | null
+          release_by: string | null
+          return_id: string | null
+          reviewer: string | null
+          reviewer_name: string | null
+          rule_flags: string | null
+          run_id: string | null
+          stage: string | null
+          stage_n: number | null
+          state: string | null
+          submit_due: string | null
+          tasks_done: number | null
+          tasks_total: number | null
+          tax_type: string | null
+          tier: string | null
+          tier_reasons: string | null
+          tier_unknowns: string | null
+          type_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "returns_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "run_calendar"
+            referencedColumns: ["run_id"]
+          },
+          {
+            foreignKeyName: "returns_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "runs"
+            referencedColumns: ["run_id"]
+          },
+        ]
+      }
       return_rules: {
         Row: {
           evaluated_at: string | null
@@ -1428,6 +1639,13 @@ export type Database = {
             columns: ["return_id"]
             isOneToOne: false
             referencedRelation: "return_board"
+            referencedColumns: ["return_id"]
+          },
+          {
+            foreignKeyName: "rule_results_return_id_fkey"
+            columns: ["return_id"]
+            isOneToOne: false
+            referencedRelation: "return_grid"
             referencedColumns: ["return_id"]
           },
           {
@@ -1584,6 +1802,13 @@ export type Database = {
             foreignKeyName: "tasks_issue_id_fkey"
             columns: ["issue_id"]
             isOneToOne: false
+            referencedRelation: "issue_grid"
+            referencedColumns: ["issue_id"]
+          },
+          {
+            foreignKeyName: "tasks_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
             referencedRelation: "issues"
             referencedColumns: ["issue_id"]
           },
@@ -1633,8 +1858,61 @@ export type Database = {
             foreignKeyName: "tasks_template_id_fkey"
             columns: ["template_id"]
             isOneToOne: false
+            referencedRelation: "task_grid"
+            referencedColumns: ["parent_id"]
+          },
+          {
+            foreignKeyName: "tasks_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "task_grid"
+            referencedColumns: ["task_id"]
+          },
+          {
+            foreignKeyName: "tasks_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
             referencedRelation: "tasks"
             referencedColumns: ["task_id"]
+          },
+        ]
+      }
+      task_grid: {
+        Row: {
+          blocked_by: string | null
+          completes_stage: number | null
+          done_on: string | null
+          due_date: string | null
+          due_flag: string | null
+          is_blocked: boolean | null
+          kind: string | null
+          kind_label: string | null
+          notes: string | null
+          owner_id: string | null
+          owner_name: string | null
+          owner_role: string | null
+          parent_id: string | null
+          parent_title: string | null
+          return_id: string | null
+          run_id: string | null
+          status: string | null
+          task_id: string | null
+          title: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "run_calendar"
+            referencedColumns: ["run_id"]
+          },
+          {
+            foreignKeyName: "tasks_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "runs"
+            referencedColumns: ["run_id"]
           },
         ]
       }
