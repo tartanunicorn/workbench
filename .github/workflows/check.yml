@@ -27,6 +27,7 @@ jobs:
         run: |
           supabase gen types typescript --local --schema public > database.types.ts
           diff -u lib/database.types.ts database.types.ts || {
+            echo "::group::Generated types (copy into lib/database.types.ts)"; cat database.types.ts; echo "::endgroup::"
             echo "::error file=lib/database.types.ts::Types are out of date. Download the database-types artifact, or run: supabase gen types typescript --local --schema public > lib/database.types.ts"
             exit 1
           }
