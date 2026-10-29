@@ -1,4 +1,3 @@
 {
-  "outputDirectory": "app",
-  "cleanUrls": true
+  "framework": "nextjs"
 }
