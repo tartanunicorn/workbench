@@ -10,6 +10,6 @@ schemas = ["public"]
 port = 54322
 major_version = 17
 
+# The sample data is part of the baseline migration, so there is no separate seed
 [db.seed]
-enabled = true
-sql_paths = ["./seed.sql"]
+enabled = false

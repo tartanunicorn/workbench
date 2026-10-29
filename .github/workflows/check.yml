@@ -17,10 +17,8 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: 2.122.0
-      - name: Start Postgres and apply every migration and the seed
+      - name: Start Postgres and apply every migration, starting with the baseline
         run: supabase db start
-      - name: Check the rules once, as after a real load
-        run: psql "$DB" -v ON_ERROR_STOP=1 -q -c "select evaluate_run(run_id) from runs" -o /dev/null
       - name: Database checks
         run: psql "$DB" -v ON_ERROR_STOP=1 -q -o /dev/null -f tests/db/checks.sql
       - name: Types match the schema

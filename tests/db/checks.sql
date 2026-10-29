@@ -1,4 +1,4 @@
--- Database checks, run in CI after every migration and the seed have loaded and the rules have been checked once.
+-- Database checks, run in CI after every migration has been applied to an empty database (the baseline brings the sample data).
 -- Each check raises an error when it fails, and everything rolls back, so the database is left as it was.
 \set ON_ERROR_STOP on
 begin;

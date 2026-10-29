@@ -1,6 +1,6 @@
-# One-time: production's migration history was written by hand with different version numbers.
-# This rewrites it to match the files in supabase/migrations. It changes only the history table, not the schema.
-# 003 (harden_functions) and 010 onwards were never applied, so they stay pending for the deploy workflow.
+# One-time: production's migration history was written by hand, with version numbers that match no file.
+# This forgets those and records the baseline (001), which is production as it was on 29 Oct 2026, as applied.
+# It changes only the history table, not the schema. 003 and 010 onwards stay pending for the deploy workflow.
 name: Repair migration history
 
 on:
@@ -27,6 +27,6 @@ jobs:
       - run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
       - name: Forget the hand-written versions
         run: supabase migration repair --status reverted 20261029184046 20261029184047 20261029185230 20261029193226 20261029193737 20261029194422 20261029194704 20261029201229
-      - name: Record the files that are already applied
-        run: supabase migration repair --status applied 20261029000001 20261029000002 20261029000004 20261029000005 20261029000006 20261029000007 20261029000008 20261029000009
+      - name: Record the baseline as applied
+        run: supabase migration repair --status applied 20261029000001
       - run: supabase migration list
