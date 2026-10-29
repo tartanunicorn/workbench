@@ -1,0 +1,54 @@
+# Runs on every pull request: builds the database from scratch and checks it, then checks the app.
+name: Check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  database:
+    name: Database
+    runs-on: ubuntu-latest
+    env:
+      DB: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.122.0
+      - name: Start Postgres and apply every migration and the seed
+        run: supabase db start
+      - name: Check the rules once, as after a real load
+        run: psql "$DB" -v ON_ERROR_STOP=1 -q -c "select evaluate_run(run_id) from runs" -o /dev/null
+      - name: Database checks
+        run: psql "$DB" -v ON_ERROR_STOP=1 -q -o /dev/null -f tests/db/checks.sql
+      - name: Types match the schema
+        run: |
+          supabase gen types typescript --local --schema public > database.types.ts
+          diff -u lib/database.types.ts database.types.ts || {
+            echo "::error file=lib/database.types.ts::Types are out of date. Download the database-types artifact, or run: supabase gen types typescript --local --schema public > lib/database.types.ts"
+            exit 1
+          }
+      - name: Keep the generated types
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-types
+          path: database.types.ts
+          if-no-files-found: ignore
+
+  app:
+    name: App
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test

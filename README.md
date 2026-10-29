@@ -36,25 +36,38 @@ One name for each thing, on every screen (`lib/words.ts`):
 
 | Path | What it is |
 |---|---|
-| `app/` | Next.js App Router screens: Tasks, Runs (with kick-off), a run's dashboard, Returns, a return with its tasks and the rules' reasons, Issues, Rules |
+| `app/` | Next.js App Router screens: Tasks, Runs (with kick-off), a run's dashboard, Returns, a return with its tasks and the rules' reasons, Issues, Customers, Registration types (with registering customers), Rules |
 | `components/grids/`, `app/api/grid` | AG Grid over database views: column filters, sorting and paging run in Postgres, 100 rows at a time |
-| `components/`, `lib/` | Shared UI, the Supabase client, URL filters, formatting, and the evidence reader |
+| `components/ui-kit/` | [shadcn/ui](https://ui.shadcn.com) components (new-york, neutral); add more with `npx shadcn add <name>` |
+| `components/`, `lib/` | Workbench's own pieces built on them, the Supabase client, URL filters, formatting, and the evidence reader |
 | `lib/database.types.ts` | Types generated from the database (regenerate after a schema change) |
-| `supabase/migrations/` | Schema, access, demo access, the domain logic (005), rules as data (006), and the summary and grid views (007–009), issues folded into tasks (010) |
+| `supabase/migrations/` | Schema, access, demo access, the domain logic (005), rules as data (006), and the summary and grid views (007–009), issues folded into tasks (010), registration types (011) and customer setup (012) |
 | `supabase/seed.sql` | Sample data: the closed Oct 2026 run and the open Nov 2026 run, customers anonymised |
 | `scripts/`, `data/` | How the sample was built from the original tracker export |
 | `tests/` | Unit tests (`npm test`) |
 
 ## The model in one paragraph
 
-**Return types** say what is filed (place, tax type, frequency, workflow). Their rules (due day, automation, default owners) are **return type rules**, dated rows that stack field by field. A **registration** links a customer to a return type for a date range. **Kick off** creates a **run**, a **return** for every registration with a period ending that month, the return's **ownerships**, a header **task** for the run and each return, and each return's tasks with due dates. Then the **rules** are checked for every return: they set the tier, leave out tasks a return doesn't need (a tier B return skips the second review), and raise flags. **Task relations** link tasks: *Subtask of* builds the tree (task → return → run), *Blocks* stops a task until another is done, and *Affects* ties an issue to a return. A return's stage follows its finished tasks. **Issues** are tasks too: an issue *affects* returns (a task relation to each return's task) or belongs to a customer, and an open issue makes a return tier A.
+**Registration types** say what is filed (place, tax type, frequency, workflow). Their rules (due day, automation, default owners) are **registration type rules**, dated rows that stack field by field. A **registration** links a customer to a registration type from a start date; registering a customer without an account number adds an Onboarding task to collect their portal login. **Kick off** creates a **run**, a **return** for every registration with a period ending that month, the return's **ownerships**, a header **task** for the run and each return, and each return's tasks with due dates. Then the **rules** are checked for every return: they set the tier, leave out tasks a return doesn't need (a tier B return skips the second review), and raise flags. **Task relations** link tasks: *Subtask of* builds the tree (task → return → run), *Blocks* stops a task until another is done, and *Affects* ties an issue to a return. A return's stage follows its finished tasks. **Issues** are tasks too: an issue *affects* returns (a task relation to each return's task) or belongs to a customer, and an open issue makes a return tier A.
 
 ## Set up
 
-1. **Database.** Create a Supabase project and run `supabase/migrations/` in order (or `supabase db push`), then `supabase/seed.sql` (a data dump of the demo database). Because the seed loads after the rules, check them once: `select evaluate_run(run_id) from runs;`
+1. **Database.** Create a Supabase project and run `supabase db push` (see Database changes), then load `supabase/seed.sql` (a data dump of the demo database). Because the seed loads after the rules, check them once: `select evaluate_run(run_id) from runs;`
 2. **Config.** Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (the demo project's values are the defaults in `lib/db.ts`).
 3. **Run.** `npm install`, then `npm run dev`. `npm test` runs the unit tests and `npm run build` the production build.
-4. **Deploy.** Vercel builds `main` automatically.
+4. **Deploy.** Vercel builds `main` automatically, and the Deploy database workflow migrates production.
+
+## Database changes
+
+Every change to the database is a migration file in `supabase/migrations/`, and nobody changes production by hand.
+
+1. **Write a migration.** Add the next numbered file, such as `20261029000013_what_it_does.sql`. Never edit a migration that has reached main; add another one instead.
+2. **Open a pull request.** The Check workflow starts an empty Postgres, applies every migration and `supabase/seed.sql`, checks the rules once and runs `tests/db/checks.sql` (tier counts, issues as tasks, registering customers). It also regenerates `lib/database.types.ts` and fails if the committed types don't match; the generated file is attached to the run as `database-types`. The App job typechecks and runs the unit tests.
+3. **Merge to main.** The Deploy database workflow links the production project and runs `supabase db push`, which applies only the migrations production doesn't have yet. It runs in the `production` environment, so it can require an approval.
+
+Secrets, set in GitHub under Settings → Secrets and variables → Actions (or on the `production` environment): `SUPABASE_ACCESS_TOKEN` (a personal access token from supabase.com/dashboard/account/tokens), `SUPABASE_DB_PASSWORD` (the database password) and `SUPABASE_PROJECT_ID`.
+
+Locally, `supabase db start` (needs Docker) builds the same database the check uses.
 
 ## Access
 

@@ -1,0 +1,15 @@
+# Local and CI settings for the Supabase CLI. Production is linked in the deploy workflow, not here.
+project_id = "workbench"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+
+[db]
+port = 54322
+major_version = 17
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
