@@ -1,0 +1,32 @@
+# One-time: production's migration history was written by hand, with version numbers that match no file.
+# This forgets those and records the baseline (001), which is production as it was on 29 Oct 2026, as applied.
+# It changes only the history table, not the schema. 003 and 010 onwards stay pending for the deploy workflow.
+name: Repair migration history
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type "repair" to rewrite production's migration history
+        required: true
+
+jobs:
+  repair:
+    if: inputs.confirm == 'repair'
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.122.0
+      - run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
+      - name: Forget the hand-written versions
+        run: supabase migration repair --status reverted 20261029184046 20261029184047 20261029185230 20261029193226 20261029193737 20261029194422 20261029194704 20261029201229
+      - name: Record the baseline as applied
+        run: supabase migration repair --status applied 20261029000001
+      - run: supabase migration list

@@ -7,6 +7,8 @@ const LINKS = [
   ["/runs", "Runs"],
   ["/returns", "Returns"],
   ["/issues", "Issues"],
+  ["/customers", "Customers"],
+  ["/registration-types", "Registration types"],
   ["/rules", "Rules"],
 ] as const;
 
@@ -18,7 +20,7 @@ export function Nav() {
         const on = path === href || path.startsWith(`${href}/`);
         return (
           <Link key={href} href={href}
-            className={`rounded px-2.5 py-1 ${on ? "bg-soft font-medium text-ink" : "text-muted hover:text-ink"}`}>
+            className={`rounded-md px-2.5 py-1 transition-colors ${on ? "bg-muted font-medium text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
             {label}
           </Link>
         );

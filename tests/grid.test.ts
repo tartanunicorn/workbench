@@ -32,7 +32,7 @@ describe("grid filters to PostgREST", () => {
   it("returns nothing when nothing is filtered or searched", () => {
     expect(filterTree(tasks, {})).toBeNull();
     expect(searchTree(tasks, "  ")).toBeNull();
-    expect(searchTree(tasks, "tx")).toBe('or(title.ilike."*tx*",parent_title.ilike."*tx*",owner_name.ilike."*tx*",notes.ilike."*tx*")');
+    expect(searchTree(tasks, "tx")).toBe(`or(${tasks.search.map((f) => `${f}.ilike."*tx*"`).join(",")})`);
   });
 
   it("sorts by the user's choice, then the default order as a tie-break", () => {

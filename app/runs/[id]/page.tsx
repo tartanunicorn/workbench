@@ -48,10 +48,10 @@ export default async function RunPage({ params }: { params: Promise<{ id: string
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Panel title="Returns by health">
-          <ul className="divide-y divide-line">
+          <ul className="divide-y divide-border">
             {flags.map(([flag, count]) => (
               <li key={flag}>
-                <Link href={`${r}&health=${encodeURIComponent(flag)}`} className="flex items-center justify-between px-4 py-2 hover:bg-soft">
+                <Link href={`${r}&health=${encodeURIComponent(flag)}`} className="flex items-center justify-between px-4 py-2 hover:bg-muted">
                   <Badge tone={flagTone(flag)}>{flag || "Not known"}</Badge><span className="num">{count.toLocaleString()}</span>
                 </Link>
               </li>
@@ -65,7 +65,7 @@ export default async function RunPage({ params }: { params: Promise<{ id: string
               <li key={s.stage_n}>
                 <Link href={`${r}&stage=${s.stage_n}`} className="block hover:underline">
                   <div className="flex justify-between text-sm"><span>{s.stage}</span><span className="num">{s.returns.toLocaleString()}</span></div>
-                  <div className="mt-1 h-1.5 rounded bg-soft"><div className="h-1.5 rounded bg-ink" style={{ width: `${n ? (s.returns / n) * 100 : 0}%` }} /></div>
+                  <div className="mt-1 h-1.5 rounded bg-muted"><div className="h-1.5 rounded bg-primary" style={{ width: `${n ? (s.returns / n) * 100 : 0}%` }} /></div>
                 </Link>
               </li>
             ))}
@@ -73,11 +73,11 @@ export default async function RunPage({ params }: { params: Promise<{ id: string
         </Panel>
 
         <Panel title="Overdue tasks by owner">
-          {overdueByOwner.length === 0 ? <p className="px-4 py-3 text-muted">Nothing overdue.</p> : (
-            <ul className="divide-y divide-line">
+          {overdueByOwner.length === 0 ? <p className="px-4 py-3 text-muted-foreground">Nothing overdue.</p> : (
+            <ul className="divide-y divide-border">
               {overdueByOwner.map(([o, count]) => (
                 <li key={o}>
-                  <Link href={`/tasks?run=${id}&due=Overdue${o ? `&owner=${o}` : ""}`} className="flex justify-between px-4 py-2 hover:bg-soft">
+                  <Link href={`/tasks?run=${id}&due=Overdue${o ? `&owner=${o}` : ""}`} className="flex justify-between px-4 py-2 hover:bg-muted">
                     <span>{ownerName(people, o) || "Unassigned"}</span><span className="num">{count.toLocaleString()}</span>
                   </Link>
                 </li>

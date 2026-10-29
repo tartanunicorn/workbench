@@ -1,51 +1,97 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
-/* Black and white. Colour only where it carries meaning: red is late, amber is at risk, green is done. */
+/* shadcn/ui's neutral theme: black and white. Colour only where it carries meaning:
+   red is late, amber is at risk, green is done. Dark mode is the .dark class on <html>. */
+@custom-variant dark (&:is(.dark *));
+
 :root {
-  --bg: #ffffff;
-  --panel: #ffffff;
-  --ink: #0a0a0a;
-  --muted: #6b6b6b;
-  --line: #e5e5e5;
-  --soft: #f5f5f5;
-  --accent: #0a0a0a;
-  --accent-ink: #ffffff;
-  --good: #1f7a3a;
-  --warn: #8a5a00;
-  --bad: #b42318;
-  --info: #3a3a3a;
-  --good-bg: #ecf6ef;
-  --warn-bg: #fdf4e3;
-  --bad-bg: #fdecea;
-  --info-bg: #f0f0f0;
+  --radius: 0.5rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+
+  /* status colours, text and tint */
+  --good: oklch(0.5 0.12 150);
+  --warn: oklch(0.52 0.11 75);
+  --bad: oklch(0.52 0.19 27);
+  --info: oklch(0.4 0 0);
+  --good-bg: oklch(0.96 0.03 150);
+  --warn-bg: oklch(0.97 0.04 85);
+  --bad-bg: oklch(0.96 0.03 27);
+  --info-bg: oklch(0.95 0 0);
   color-scheme: light;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0a0a0a; --panel: #111111; --ink: #f2f2f2; --muted: #9a9a9a; --line: #262626; --soft: #1a1a1a;
-    --accent: #f2f2f2; --accent-ink: #0a0a0a;
-    --good: #6fcf8a; --warn: #e6b450; --bad: #f2877c; --info: #cfcfcf;
-    --good-bg: #13261a; --warn-bg: #2b2210; --bad-bg: #2d1412; --info-bg: #1f1f1f;
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #0a0a0a; --panel: #111111; --ink: #f2f2f2; --muted: #9a9a9a; --line: #262626; --soft: #1a1a1a;
-  --accent: #f2f2f2; --accent-ink: #0a0a0a;
-  --good: #6fcf8a; --warn: #e6b450; --bad: #f2877c; --info: #cfcfcf;
-  --good-bg: #13261a; --warn-bg: #2b2210; --bad-bg: #2d1412; --info-bg: #1f1f1f;
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.18 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.235 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+
+  --good: oklch(0.78 0.13 150);
+  --warn: oklch(0.82 0.12 80);
+  --bad: oklch(0.75 0.14 25);
+  --info: oklch(0.85 0 0);
+  --good-bg: oklch(0.26 0.05 150);
+  --warn-bg: oklch(0.27 0.05 80);
+  --bad-bg: oklch(0.27 0.06 25);
+  --info-bg: oklch(0.26 0 0);
   color-scheme: dark;
 }
 
 @theme inline {
-  --color-bg: var(--bg);
-  --color-panel: var(--panel);
-  --color-ink: var(--ink);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
-  --color-line: var(--line);
-  --color-soft: var(--soft);
+  --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
-  --color-accent-ink: var(--accent-ink);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
   --color-good: var(--good);
   --color-warn: var(--warn);
   --color-bad: var(--bad);
@@ -58,19 +104,10 @@
   --font-mono: var(--font-plex-mono), ui-monospace, monospace;
 }
 
-body { background: var(--bg); color: var(--ink); font-family: var(--font-sans); font-size: 14px; }
-h1, h2, h3 { text-wrap: balance; }
-.num { font-variant-numeric: tabular-nums; }
+@layer base {
+  * { @apply border-border outline-ring/50; }
+  body { @apply bg-background text-foreground; font-family: var(--font-sans); font-size: 14px; }
+  h1, h2, h3 { text-wrap: balance; }
+}
 
-/* small tables that aren't grids (runs, a return's history) share the grid's look */
-.grid-table { width: 100%; border-collapse: collapse; }
-.grid-table th { text-align: left; font-weight: 500; font-size: 12px; color: var(--muted); padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--soft); white-space: nowrap; }
-.grid-table td { padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
-.grid-table tr:last-child td { border-bottom: 0; }
-.grid-table tr:hover td { background: var(--soft); }
-.field { border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 4px; padding: 5px 8px; font: inherit; min-width: 0; }
-.btn { border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 4px; padding: 5px 10px; font: inherit; cursor: pointer; white-space: nowrap; }
-.btn:hover { background: var(--soft); }
-.btn-primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-.btn-primary:hover { background: var(--accent); opacity: .85; }
-.btn:disabled { cursor: not-allowed; opacity: .4; }
+.num { font-variant-numeric: tabular-nums; }
