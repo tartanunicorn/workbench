@@ -4,7 +4,7 @@ import { Badge, flagTone } from "./ui";
 export function Evidence({ nodes, depth = 0 }: { nodes: EvidenceNode[]; depth?: number }) {
   if (!nodes.length) return null;
   return (
-    <ul className={depth ? "mt-1 ml-4 space-y-1 border-l border-line pl-3" : "space-y-1"}>
+    <ul className={depth ? "mt-1 ml-4 space-y-1 border-l border-border pl-3" : "space-y-1"}>
       {nodes.map((n, i) => (
         <li key={i} className="text-sm">
           {n.type === "condition" ? (
@@ -13,8 +13,8 @@ export function Evidence({ nodes, depth = 0 }: { nodes: EvidenceNode[]; depth?: 
               <Evidence nodes={n.children} depth={depth + 1} />
             </>
           ) : n.type === "fact" ? (
-            <span className="text-muted">
-              {measureLabel(n.measure)} {opLabel(n.op)} {show(n.value, n.measure)}: <span className="text-ink">{n.why ?? `it is ${show(n.actual, n.measure)}`}</span>
+            <span className="text-muted-foreground">
+              {measureLabel(n.measure)} {opLabel(n.op)} {show(n.value, n.measure)}: <span className="text-foreground">{n.why ?? `it is ${show(n.actual, n.measure)}`}</span>
             </span>
           ) : <span className="text-bad">{n.message}</span>}
         </li>

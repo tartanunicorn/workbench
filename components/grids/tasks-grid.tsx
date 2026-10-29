@@ -2,14 +2,16 @@
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ColDef, ICellRendererParams } from "ag-grid-community";
+import { toast } from "sonner";
 import { setTaskStatus } from "@/app/tasks/actions";
+import { Button } from "@/components/ui-kit/button";
 import type { FilterModel, Scope } from "@/lib/grid";
 import { DATE, DataGrid, NUMBER, TEXT, type GridHandle } from "./data-grid";
 import { AffectsCell, BadgeCell, PriorityCell, linkCell } from "./cells";
 
 const TIMING = ["Overdue", "Due today", "Due soon", "Upcoming", "No due date"] as const;
 
-function StatusActions(p: ICellRendererParams & { onChanged: () => void; onError: (m: string) => void }) {
+function StatusActions(p: ICellRendererParams & { onChanged: () => void }) {
   const [busy, setBusy] = useState(false);
   if (!p.data) return null;
   const { task_id, status, is_blocked } = p.data;
@@ -21,15 +23,16 @@ function StatusActions(p: ICellRendererParams & { onChanged: () => void; onError
   const go = async (to: string) => {
     setBusy(true);
     const f = new FormData(); f.set("task_id", task_id); f.set("status", to);
-    try { await setTaskStatus(f); p.onChanged(); } catch (e) { p.onError(e instanceof Error ? e.message : String(e)); }
+    try { await setTaskStatus(f); p.onChanged(); toast.success(`${p.data.title}: ${to}`); }
+    catch (e) { toast.error("Couldn\u2019t change the task", { description: e instanceof Error ? e.message : String(e) }); }
     setBusy(false);
   };
   return (
     <span className="flex h-full items-center gap-1">
       {moves.map(([to, label]) => (
-        <button key={to} disabled={busy || (to === "Done" && is_blocked)} onClick={() => go(to)}
+        <Button key={to} variant="outline" size="xs" disabled={busy || (to === "Done" && is_blocked)} onClick={() => go(to)}
           title={to === "Done" && is_blocked ? `Blocked by ${p.data.blocked_by}` : undefined}
-          className={`btn inline-flex h-7 items-center px-2.5 py-0 text-xs leading-none ${to === "Done" ? "font-semibold" : "text-muted"}`}>{label}</button>
+          className={to === "Done" ? "font-semibold" : "text-muted-foreground"}>{label}</Button>
       ))}
     </span>
   );
@@ -43,10 +46,9 @@ export function TasksGrid({ scope, counts, initialFilter, height, showParent = t
   const grid = useRef<GridHandle>(null);
   const router = useRouter();
   const [timing, setTiming] = useState<string | null>(initialFilter?.due_flag && "filter" in initialFilter.due_flag ? String(initialFilter.due_flag.filter) : null);
-  const [error, setError] = useState<string | null>(null);
 
-  const actions: ColDef = { colId: "actions", headerName: "", width: 150, sortable: false, filter: false, resizable: false, pinned: "right",
-    cellRenderer: StatusActions, cellRendererParams: { onChanged: () => { grid.current?.refresh(); router.refresh(); }, onError: setError } };
+  const actions: ColDef = { colId: "actions", headerName: "", width: 150, sortable: false, filter: false, resizable: false, pinned: "right", cellClass: "flex items-center",
+    cellRenderer: StatusActions, cellRendererParams: { onChanged: () => { grid.current?.refresh(); router.refresh(); } } };
 
   const columns = useMemo<ColDef[]>(() => variant === "issues" ? [
     { field: "title", headerName: "Issue", flex: 2, minWidth: 260, ...TEXT, tooltipField: "description" },
@@ -89,14 +91,13 @@ export function TasksGrid({ scope, counts, initialFilter, height, showParent = t
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
           {TIMING.map((t) => (
             <button key={t} onClick={() => pick(t)} aria-pressed={timing === t}
-              className={`rounded border px-4 py-2.5 text-left ${timing === t ? "border-ink" : "border-line hover:border-muted"} bg-panel`}>
-              <div className="text-xs tracking-wide text-muted uppercase">{t}</div>
+              className={`rounded-xl border bg-card px-4 py-2.5 text-left shadow-sm transition-colors ${timing === t ? "border-foreground ring-1 ring-foreground" : "hover:border-ring"}`}>
+              <div className="text-xs tracking-wide text-muted-foreground uppercase">{t}</div>
               <div className={`num mt-0.5 text-2xl font-semibold ${t === "Overdue" && (counts[t] ?? 0) > 0 ? "text-bad" : ""}`}>{(counts[t] ?? 0).toLocaleString()}</div>
             </button>
           ))}
         </div>
       ) : null}
-      {error ? <div className="rounded border border-bad bg-bad-bg px-3 py-2 text-sm text-bad">{error}</div> : null}
       <DataGrid ref={grid} grid="tasks" columns={columns} scope={scope} initialFilter={initialFilter} height={height} noun={variant === "issues" ? ["issue", "issues"] : ["task", "tasks"]}
         onFilterChange={(m) => setTiming(m.due_flag && "filter" in m.due_flag ? String(m.due_flag.filter) : null)} />
     </div>

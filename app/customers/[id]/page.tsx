@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Button } from "@/components/ui-kit/button";
 import { db, must } from "@/lib/db";
 import { team } from "@/lib/lookups";
 import { Badge, PageHead, Panel, Stat } from "@/components/ui";
-import { Choice, Field, Fold } from "@/components/form";
+import { Check, Choice, Field, FormDialog, Input, Submit } from "@/components/form";
 import { RegistrationsGrid } from "@/components/grids/setup-grids";
 import { TasksGrid } from "@/components/grids/tasks-grid";
 import { updateCustomer } from "@/app/setup/actions";
@@ -24,10 +25,23 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
 
   return (
     <>
-      <div className="mb-2 text-sm text-muted"><Link className="hover:underline" href="/customers">Customers</Link> / <span className="font-mono">{id}</span></div>
+      <div className="mb-2 text-sm text-muted-foreground"><Link className="hover:underline" href="/customers">Customers</Link> / <span className="font-mono">{id}</span></div>
       <PageHead title={c.name} sub={c.notes ?? undefined}>
         <Badge tone={c.status === "Active" ? "good" : "plain"}>{c.status}</Badge>
         {c.internal_review ? <Badge tone="warn">Internal review</Badge> : null}
+        <FormDialog label="Edit customer" variant="outline" wide>
+          <form action={updateCustomer} className="grid gap-4 sm:grid-cols-2">
+            <input type="hidden" name="customer_id" value={id} />
+            <Field label="Name"><Input name="name" defaultValue={c.name} required /></Field>
+            <Field label="Status"><Choice name="status" options={STATUSES} value={c.status} /></Field>
+            <Field label="Customer tier"><Input name="tier" defaultValue={c.tier ?? ""} /></Field>
+            <Field label="Release owner"><Choice name="release_owner" options={owners} value={c.release_owner} empty="None" /></Field>
+            <Field label="Customer approver"><Choice name="customer_approver" options={owners} value={c.customer_approver} empty="None" /></Field>
+            <Check name="internal_review" label="Needs internal review" defaultChecked={c.internal_review} className="self-end pb-2" />
+            <Field label="Notes" wide><Input name="notes" defaultValue={c.notes ?? ""} /></Field>
+            <div className="flex justify-end sm:col-span-2"><Submit>Save</Submit></div>
+          </form>
+        </FormDialog>
       </PageHead>
 
       <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-5">
@@ -38,25 +52,9 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
         <Stat label="Customer approver" value={<span className="text-base">{row.customer_approver ?? "None"}</span>} />
       </div>
 
-      <div className="mb-4">
-        <Fold title="Edit customer">
-          <form action={updateCustomer} className="grid gap-3 sm:grid-cols-3">
-            <input type="hidden" name="customer_id" value={id} />
-            <Field label="Name"><input name="name" defaultValue={c.name} required className="field" /></Field>
-            <Field label="Status"><Choice name="status" options={STATUSES} value={c.status} /></Field>
-            <Field label="Customer tier"><input name="tier" defaultValue={c.tier ?? ""} className="field" /></Field>
-            <Field label="Release owner"><Choice name="release_owner" options={owners} value={c.release_owner} empty="None" /></Field>
-            <Field label="Customer approver"><Choice name="customer_approver" options={owners} value={c.customer_approver} empty="None" /></Field>
-            <label className="flex items-center gap-2 self-end pb-2 text-sm"><input type="checkbox" name="internal_review" defaultChecked={c.internal_review} /> Needs internal review</label>
-            <Field label="Notes" wide><input name="notes" defaultValue={c.notes ?? ""} className="field" /></Field>
-            <div className="sm:col-span-3"><button className="btn btn-primary">Save</button></div>
-          </form>
-        </Fold>
-      </div>
-
       <div className="grid gap-4">
-        <Panel title={<span className="flex flex-wrap justify-between gap-2"><span>Registrations</span>
-          <Link href="/registration-types" className="text-xs font-normal text-muted underline decoration-line underline-offset-2 hover:decoration-ink">Register to another type</Link></span>}>
+        <Panel title="Registrations" action={
+          <Button variant="outline" size="xs" asChild><Link href="/registration-types">Register to another type</Link></Button>}>
           <div className="p-3"><RegistrationsGrid by="customer" scope={[{ field: "customer_id", op: "eq", value: id }]} height="320px" /></div>
         </Panel>
         <Panel title="Setup tasks and issues">

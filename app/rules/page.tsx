@@ -1,4 +1,6 @@
 import { db, must } from "@/lib/db";
+import { Button } from "@/components/ui-kit/button";
+import { Input } from "@/components/ui-kit/input";
 import { currentRun } from "@/lib/lookups";
 import { month } from "@/lib/format";
 import { describe, measureLabel, opLabel, tunable } from "@/lib/evidence";
@@ -27,25 +29,25 @@ export default async function RulesPage() {
 
       <div className="grid gap-4 xl:grid-cols-2">
         <Panel title="Definitions: what the words mean">
-          <ul className="divide-y divide-line">
+          <ul className="divide-y divide-border">
             {conditions.map((c) => {
               const t = tunable(c.expression);
               return (
                 <li key={c.rule_id} className="px-4 py-3">
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <span className="font-medium">{c.name}</span>
-                    <span className="font-mono text-xs text-muted">{c.rule_id}</span>
+                    <span className="font-mono text-xs text-muted-foreground">{c.rule_id}</span>
                   </div>
-                  <div className="text-sm text-muted">{describe(c.expression, names)}</div>
+                  <div className="text-sm text-muted-foreground">{describe(c.expression, names)}</div>
                   {t ? (
                     <form action={setThreshold} className="mt-2 flex flex-wrap items-center gap-2 text-sm">
                       <input type="hidden" name="rule_id" value={c.rule_id} />
                       <span>{measureLabel(t.measure)} {opLabel(t.op)}</span>
-                      <input name="value" defaultValue={t.value} className="field num w-28" inputMode="decimal" aria-label={`Threshold for ${c.name}`} />
-                      <button className="btn">Save and re-check</button>
+                      <Input name="value" defaultValue={t.value} className="num h-8 w-28" inputMode="decimal" aria-label={`Threshold for ${c.name}`} />
+                      <Button variant="outline" size="sm">Save and re-check</Button>
                     </form>
                   ) : null}
-                  {c.source ? <div className="mt-1 text-xs text-muted">Source: {c.source}</div> : null}
+                  {c.source ? <div className="mt-1 text-xs text-muted-foreground">Source: {c.source}</div> : null}
                 </li>
               );
             })}
@@ -57,14 +59,14 @@ export default async function RulesPage() {
             const list = rules.filter((r) => r.kind === kind);
             if (!list.length) return null;
             return (
-              <Panel key={kind} title={<>{ruleKind(kind)} {run ? <span className="font-normal text-muted">· {month(run.run_month)} run</span> : null}</>}>
-                <ul className="divide-y divide-line">
+              <Panel key={kind} title={<>{ruleKind(kind)} {run ? <span className="font-normal text-muted-foreground">· {month(run.run_month)} run</span> : null}</>}>
+                <ul className="divide-y divide-border">
                   {list.map((r) => (
                     <li key={r.rule_id} className="flex flex-wrap items-start justify-between gap-3 px-4 py-3">
                       <div className="min-w-0">
-                        <div className={r.active ? "font-medium" : "font-medium text-muted line-through"}>{r.name}</div>
-                        <div className="text-sm text-muted">
-                          When <span className="text-ink">{names.get(r.condition_id ?? "") ?? r.condition_id}</span>
+                        <div className={r.active ? "font-medium" : "font-medium text-muted-foreground line-through"}>{r.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          When <span className="text-foreground">{names.get(r.condition_id ?? "") ?? r.condition_id}</span>
                           {r.step_title ? <> · task “{r.step_title}”</> : null}
                           {r.message ? <> · “{r.message}”</> : null}
                         </div>
@@ -76,7 +78,7 @@ export default async function RulesPage() {
                       </div>
                       <form action={setActive}>
                         <input type="hidden" name="rule_id" value={r.rule_id} />
-                        <button name="active" value={r.active ? "false" : "true"} className="btn text-xs">{r.active ? "Turn off" : "Turn on"}</button>
+                        <Button variant="outline" size="xs" name="active" value={r.active ? "false" : "true"}>{r.active ? "Turn off" : "Turn on"}</Button>
                       </form>
                     </li>
                   ))}

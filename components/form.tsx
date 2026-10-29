@@ -1,34 +1,40 @@
-// Plain form pieces in the workbench's look. Forms post to server actions, so they work before any script loads.
+// Form pieces built on shadcn/ui. Forms post to server actions, so they work before any script loads.
+import { cn } from "@/lib/utils";
+import { NativeSelect, NativeSelectOption } from "@/components/ui-kit/native-select";
+import { Checkbox } from "@/components/ui-kit/checkbox";
+
+export { Input } from "@/components/ui-kit/input";
+export { Textarea } from "@/components/ui-kit/textarea";
+export { FormDialog, Submit } from "@/components/form-dialog";
 
 export function Field({ label, children, hint, wide }: { label: string; children: React.ReactNode; hint?: string; wide?: boolean }) {
   return (
-    <label className={`flex min-w-0 flex-col gap-1 text-sm ${wide ? "sm:col-span-2" : ""}`}>
-      <span className="text-muted">{label}</span>
+    <label className={cn("flex min-w-0 flex-col gap-1.5 text-sm", wide && "sm:col-span-2")}>
+      <span className="font-medium leading-none">{label}</span>
       {children}
-      {hint ? <span className="text-xs text-muted">{hint}</span> : null}
+      {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
     </label>
   );
 }
 
-export function Choice({ name, options, value, empty, required }: {
-  name: string; options: readonly (string | readonly [string, string])[]; value?: string | null; empty?: string; required?: boolean;
+export function Choice({ name, options, value, empty, required, size }: {
+  name: string; options: readonly (string | readonly [string, string])[]; value?: string | null; empty?: string; required?: boolean; size?: "sm" | "default";
 }) {
   return (
-    <select name={name} defaultValue={value ?? ""} required={required} className="field">
-      {empty !== undefined ? <option value="">{empty}</option> : null}
-      {options.map((o) => { const [v, l] = typeof o === "string" ? [o, o] : o; return <option key={v} value={v}>{l}</option>; })}
-    </select>
+    <div className="[&>[data-slot=native-select-wrapper]]:w-full">
+      <NativeSelect name={name} defaultValue={value ?? ""} required={required} size={size}>
+        {empty !== undefined ? <NativeSelectOption value="">{empty}</NativeSelectOption> : null}
+        {options.map((o) => { const [v, l] = typeof o === "string" ? [o, o] : o; return <NativeSelectOption key={v} value={v}>{l}</NativeSelectOption>; })}
+      </NativeSelect>
+    </div>
   );
 }
 
-// A form that stays folded until someone needs it
-export function Fold({ title, children, open }: { title: string; children: React.ReactNode; open?: boolean }) {
+// A checkbox with its label. Inside a form it posts "on" when ticked, like a native one.
+export function Check({ name, label, defaultChecked, className }: { name: string; label: string; defaultChecked?: boolean; className?: string }) {
   return (
-    <details open={open} className="group rounded border border-line bg-panel">
-      <summary className="cursor-pointer list-none px-4 py-2.5 text-sm font-medium select-none">
-        <span className="inline-block w-4 text-muted group-open:rotate-90">›</span>{title}
-      </summary>
-      <div className="border-t border-line px-4 py-3">{children}</div>
-    </details>
+    <label className={cn("flex items-center gap-2 text-sm", className)}>
+      <Checkbox name={name} defaultChecked={defaultChecked} /> {label}
+    </label>
   );
 }

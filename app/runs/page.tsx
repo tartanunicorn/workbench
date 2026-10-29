@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { Checkbox } from "@/components/ui-kit/checkbox";
+import { Submit } from "@/components/form";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui-kit/table";
 import { db, must } from "@/lib/db";
 import { runs } from "@/lib/lookups";
 import { day, month } from "@/lib/format";
@@ -22,42 +25,42 @@ export default async function RunsPage() {
       <PageHead title="Runs" sub="One run a month: release by business day 5, submit by the 19th." />
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <TableBox>
-          <table className="grid-table">
-            <thead><tr><th>Run</th><th>Status</th><th>Periods</th><th>Release by</th><th>Submit by</th><th className="text-right">Returns</th><th className="text-right">Released</th><th className="text-right">Submitted</th></tr></thead>
-            <tbody>
+          <Table>
+            <TableHeader><TableRow><TableHead>Run</TableHead><TableHead>Status</TableHead><TableHead>Periods</TableHead><TableHead>Release by</TableHead><TableHead>Submit by</TableHead><TableHead className="text-right">Returns</TableHead><TableHead className="text-right">Released</TableHead><TableHead className="text-right">Submitted</TableHead></TableRow></TableHeader>
+            <TableBody>
               {all.map((r) => {
                 const rows = summary.filter((s) => s.run_id === r.run_id);
                 const n = total(rows);
                 return (
-                  <tr key={r.run_id}>
-                    <td><Link className="font-medium underline decoration-line underline-offset-2 hover:decoration-ink" href={`/runs/${r.run_id}`}>{month(r.run_month)}</Link></td>
-                    <td><Badge tone={r.status === "Open" ? "info" : "plain"}>{r.status}</Badge></td>
-                    <td className="num whitespace-nowrap text-muted">{day(r.period_start)} – {day(r.period_end)}</td>
-                    <td className="num whitespace-nowrap">{day(r.release_by)}</td>
-                    <td className="num whitespace-nowrap">{day(r.submit_by)}</td>
-                    <td className="num text-right">{n.toLocaleString()}</td>
-                    <td className="num text-right">{total(rows, (s) => (s.stage_n ?? 0) >= 6).toLocaleString()}</td>
-                    <td className="num text-right">{total(rows, (s) => (s.stage_n ?? 0) >= 8).toLocaleString()}</td>
-                  </tr>
+                  <TableRow key={r.run_id}>
+                    <TableCell><Link className="font-medium underline decoration-border underline-offset-2 hover:decoration-foreground" href={`/runs/${r.run_id}`}>{month(r.run_month)}</Link></TableCell>
+                    <TableCell><Badge tone={r.status === "Open" ? "info" : "plain"}>{r.status}</Badge></TableCell>
+                    <TableCell className="num whitespace-nowrap text-muted-foreground">{day(r.period_start)} – {day(r.period_end)}</TableCell>
+                    <TableCell className="num whitespace-nowrap">{day(r.release_by)}</TableCell>
+                    <TableCell className="num whitespace-nowrap">{day(r.submit_by)}</TableCell>
+                    <TableCell className="num text-right">{n.toLocaleString()}</TableCell>
+                    <TableCell className="num text-right">{total(rows, (s) => (s.stage_n ?? 0)>= 6).toLocaleString()}</TableCell>
+                    <TableCell className="num text-right">{total(rows, (s) => (s.stage_n ?? 0)>= 8).toLocaleString()}</TableCell>
+                  </TableRow>
                 );
               })}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </TableBox>
 
         <Panel title="Kick off the next run">
           <div className="space-y-3 px-4 py-3">
             {preview.exists ? (
-              <p className="text-muted">The {month(preview.run_month)} run already exists. <Link className="underline decoration-line underline-offset-2 hover:decoration-ink" href={`/runs/${preview.run_id}`}>Open it</Link>.</p>
+              <p className="text-muted-foreground">The {month(preview.run_month)} run already exists. <Link className="underline decoration-border underline-offset-2 hover:decoration-foreground" href={`/runs/${preview.run_id}`}>Open it</Link>.</p>
             ) : (
               <>
                 <p><span className="font-medium">{month(preview.run_month)}</span> would start with <span className="num font-medium">{preview.returns.toLocaleString()}</span> returns: one for every active registration with a period ending that month, each with its owners and tasks. The rules then decide which tasks each return needs.</p>
                 <form action={kickOff} className="space-y-3">
                   <label className="flex items-start gap-2">
-                    <input type="checkbox" name="confirm" value="yes" required className="mt-1" />
+                    <Checkbox name="confirm" value="yes" required className="mt-0.5" />
                     <span>Create the {month(preview.run_month)} run now</span>
                   </label>
-                  <button className="btn btn-primary">Kick off {month(preview.run_month)}</button>
+                  <Submit>Kick off {month(preview.run_month)}</Submit>
                 </form>
               </>
             )}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import { Nav } from "@/components/nav";
 import { ThemeToggle, themeScript } from "@/components/theme-toggle";
+import { Toaster } from "@/components/ui-kit/sonner";
 import "./globals.css";
 
 const sans = IBM_Plex_Sans({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-plex-sans" });
@@ -14,7 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${sans.variable} ${mono.variable}`} suppressHydrationWarning>
       <head><script dangerouslySetInnerHTML={{ __html: themeScript }} /></head>
       <body className="min-h-screen">
-        <header className="border-b border-line bg-panel">
+        <header className="sticky top-0 z-20 border-b bg-background/90 backdrop-blur">
           <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2.5">
             <a href="/tasks" className="font-semibold tracking-tight">Workbench</a>
             <Nav />
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </header>
         <main className="mx-auto max-w-[1600px] px-4 py-5">{children}</main>
+        <Toaster position="bottom-right" />
       </body>
     </html>
   );

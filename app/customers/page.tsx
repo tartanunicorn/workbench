@@ -1,6 +1,6 @@
 import { team } from "@/lib/lookups";
 import { PageHead } from "@/components/ui";
-import { Choice, Field, Fold } from "@/components/form";
+import { Check, Choice, Field, FormDialog, Input, Submit } from "@/components/form";
 import { CustomersGrid } from "@/components/grids/setup-grids";
 import { createCustomer } from "@/app/setup/actions";
 
@@ -10,20 +10,19 @@ export default async function CustomersPage() {
   const people = (await team()).map((o) => [o.owner_id, o.name] as const);
   return (
     <>
-      <PageHead title="Customers" sub="Everyone we file for. Open a customer to see their registrations, setup tasks and issues." />
-      <div className="mb-3">
-        <Fold title="New customer">
-          <form action={createCustomer} className="grid gap-3 sm:grid-cols-3">
-            <Field label="Name"><input name="name" required className="field" /></Field>
-            <Field label="Org ID"><input name="org_id" className="field" /></Field>
-            <Field label="Customer tier"><input name="tier" className="field" placeholder="e.g. Enterprise" /></Field>
+      <PageHead title="Customers" sub="Everyone we file for. Open a customer to see their registrations, setup tasks and issues.">
+        <FormDialog label="New customer" description="Register them to a registration type next, from the type's page." wide>
+          <form action={createCustomer} className="grid gap-4 sm:grid-cols-2">
+            <Field label="Name" wide><Input name="name" required /></Field>
+            <Field label="Org ID"><Input name="org_id" /></Field>
+            <Field label="Customer tier"><Input name="tier" placeholder="e.g. Enterprise" /></Field>
             <Field label="Release owner"><Choice name="release_owner" options={people} empty="None yet" /></Field>
             <Field label="Customer approver"><Choice name="customer_approver" options={people} empty="None yet" /></Field>
-            <label className="flex items-center gap-2 self-end pb-2 text-sm"><input type="checkbox" name="internal_review" /> Needs internal review</label>
-            <div className="sm:col-span-3"><button className="btn btn-primary">Create customer</button></div>
+            <Check name="internal_review" label="Needs internal review" className="sm:col-span-2" />
+            <div className="flex justify-end sm:col-span-2"><Submit>Create customer</Submit></div>
           </form>
-        </Fold>
-      </div>
+        </FormDialog>
+      </PageHead>
       <CustomersGrid />
     </>
   );

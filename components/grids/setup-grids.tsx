@@ -10,7 +10,7 @@ const YESNO: Partial<ColDef> = { filter: false, valueFormatter: (p) => (p.value 
 
 function CountCell(tone: "warn" | "bad") {
   return function Count(p: ICellRendererParams) {
-    if (!p.value) return <span className="text-muted">0</span>;
+    if (!p.value) return <span className="text-muted-foreground">0</span>;
     return <Badge tone={tone}>{p.value}</Badge>;
   };
 }

@@ -1,11 +1,12 @@
 import Link from "next/link";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui-kit/table";
 import { notFound } from "next/navigation";
 import { db, must } from "@/lib/db";
 import { customerList, ownerName, owners, registrationTypeList, runs } from "@/lib/lookups";
 import { day } from "@/lib/format";
 import { AUTOMATION, DUE_RULES, RULE_FIELD } from "@/lib/words";
 import { PageHead, Panel, Stat } from "@/components/ui";
-import { Choice, Field, Fold } from "@/components/form";
+import { Choice, Field, FormDialog, Input, Submit } from "@/components/form";
 import { RegistrationsGrid } from "@/components/grids/setup-grids";
 import { RegisterCustomers } from "@/components/register-customers";
 import { addTypeRule, copyTemplate } from "@/app/setup/actions";
@@ -15,7 +16,7 @@ export const dynamic = "force-dynamic";
 const ANCHOR: Record<string, string> = { BD: "business day", CD: "calendar day", DUE: "days from due date" };
 function when(anchor: string | null, offset: number | null) {
   if (!anchor || offset === null) return "";
-  return anchor === "DUE" ? `${offset >= 0 ? "+" : ""}${offset} ${ANCHOR.DUE}` : `${ANCHOR[anchor]} ${offset}`;
+  return anchor === "DUE" ? `${offset>= 0 ? "+" : ""}${offset} ${ANCHOR.DUE}` : `${ANCHOR[anchor]} ${offset}`;
 }
 
 export default async function RegistrationTypePage({ params }: { params: Promise<{ id: string }> }) {
@@ -38,7 +39,7 @@ export default async function RegistrationTypePage({ params }: { params: Promise
 
   return (
     <>
-      <div className="mb-2 text-sm text-muted"><Link className="hover:underline" href="/registration-types">Registration types</Link> / <span className="font-mono">{id}</span></div>
+      <div className="mb-2 text-sm text-muted-foreground"><Link className="hover:underline" href="/registration-types">Registration types</Link> / <span className="font-mono">{id}</span></div>
       <PageHead title={t.name} sub={`${t.region_code ?? t.country_code} · ${t.tax_type} · ${t.frequency} · ${t.workflow} workflow`} />
 
       <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-5">
@@ -56,36 +57,34 @@ export default async function RegistrationTypePage({ params }: { params: Promise
           </div>
         </Panel>
 
-        <Panel title="Rules, by the date they start">
+        <Panel title="Rules, by the date they start" action={
+          <FormDialog label="Change a rule" title="Change a rule from a date" variant="outline" wide>
+          <form action={addTypeRule} className="grid gap-3 sm:grid-cols-2">
+            <input type="hidden" name="registration_type_id" value={id} />
+            <Field label="Rule"><Choice name="field" options={Object.entries(RULE_FIELD)} /></Field>
+            <Field label="New value" hint={`Due: ${DUE_RULES.join(" or ")}. Automation: ${AUTOMATION.join(", ")}. Owners: an owner ID.`}>
+              <Input name="value" list="rule-values" />
+            </Field>
+            <datalist id="rule-values">{[...DUE_RULES, ...AUTOMATION, ...ownerChoices.map(([v]) => v)].map((v) => <option key={v} value={v} />)}</datalist>
+            <Field label="From" hint="Periods ending on or after this date use it; earlier ones keep the old value"><Input type="date" name="valid_from" required /></Field>
+            <Field label="Why"><Input name="notes" /></Field>
+            <div className="flex justify-end sm:col-span-2"><Submit>Save rule change</Submit></div>
+          </form>
+          </FormDialog>}>
           <div className="max-h-72 overflow-y-auto">
-            <table className="grid-table">
-              <thead><tr><th>Rule</th><th>Value</th><th>From</th><th>Notes</th></tr></thead>
-              <tbody>
-                {rules.length === 0 ? <tr><td colSpan={4} className="text-muted">No rules yet.</td></tr> : rules.map((r) => (
-                  <tr key={r.rule_id}>
-                    <td className="whitespace-nowrap">{RULE_FIELD[r.field] ?? r.field}</td>
-                    <td>{value(r.field, r.value)}</td>
-                    <td className="num whitespace-nowrap">{r.valid_from <= "2000-12-31" ? "Always" : day(r.valid_from)}</td>
-                    <td className="text-muted">{r.notes}</td>
-                  </tr>
+            <Table>
+              <TableHeader><TableRow><TableHead>Rule</TableHead><TableHead>Value</TableHead><TableHead>From</TableHead><TableHead>Notes</TableHead></TableRow></TableHeader>
+              <TableBody>
+                {rules.length === 0 ? <TableRow><TableCell colSpan={4} className="text-muted-foreground">No rules yet.</TableCell></TableRow> : rules.map((r) => (
+                  <TableRow key={r.rule_id}>
+                    <TableCell className="whitespace-nowrap">{RULE_FIELD[r.field] ?? r.field}</TableCell>
+                    <TableCell>{value(r.field, r.value)}</TableCell>
+                    <TableCell className="num whitespace-nowrap">{r.valid_from <= "2000-12-31" ? "Always" : day(r.valid_from)}</TableCell>
+                    <TableCell className="text-muted-foreground">{r.notes}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="border-t border-line p-3">
-            <Fold title="Change a rule from a date">
-              <form action={addTypeRule} className="grid gap-3 sm:grid-cols-2">
-                <input type="hidden" name="registration_type_id" value={id} />
-                <Field label="Rule"><Choice name="field" options={Object.entries(RULE_FIELD)} /></Field>
-                <Field label="New value" hint={`Due: ${DUE_RULES.join(" or ")}. Automation: ${AUTOMATION.join(", ")}. Owners: an owner ID.`}>
-                  <input name="value" className="field" list="rule-values" />
-                </Field>
-                <datalist id="rule-values">{[...DUE_RULES, ...AUTOMATION, ...ownerChoices.map(([v]) => v)].map((v) => <option key={v} value={v} />)}</datalist>
-                <Field label="From" hint="Periods ending on or after this date use it; earlier ones keep the old value"><input type="date" name="valid_from" required className="field" /></Field>
-                <Field label="Why"><input name="notes" className="field" /></Field>
-                <div className="sm:col-span-2"><button className="btn btn-primary">Save rule change</button></div>
-              </form>
-            </Fold>
+              </TableBody>
+            </Table>
           </div>
         </Panel>
 
@@ -94,24 +93,24 @@ export default async function RegistrationTypePage({ params }: { params: Promise
             <form action={copyTemplate} className="flex flex-wrap items-end gap-3 p-4">
               <input type="hidden" name="registration_type_id" value={id} />
               <Field label="No tasks yet. Copy them from"><Choice name="copy_from" options={types.filter((x) => x.registration_type_id !== id).map((x) => [x.registration_type_id, x.name] as const)} empty="Pick a type" required /></Field>
-              <button className="btn btn-primary">Copy tasks</button>
+              <Submit>Copy tasks</Submit>
             </form>
           ) : (
             <div className="max-h-80 overflow-y-auto">
-              <table className="grid-table">
-                <thead><tr><th>Task</th><th>Due</th><th>Stage</th><th>Owner</th><th>Tier</th></tr></thead>
-                <tbody>
+              <Table>
+                <TableHeader><TableRow><TableHead>Task</TableHead><TableHead>Due</TableHead><TableHead>Stage</TableHead><TableHead>Owner</TableHead><TableHead>Tier</TableHead></TableRow></TableHeader>
+                <TableBody>
                   {template.map((k) => (
-                    <tr key={k.task_id}>
-                      <td>{k.title}</td>
-                      <td className="whitespace-nowrap text-muted">{when(k.anchor, k.offset)}</td>
-                      <td className="num">{k.completes_stage}</td>
-                      <td className="whitespace-nowrap">{k.owner_role}</td>
-                      <td>{k.applies_to_tier === "A" ? "Tier A only" : "All"}</td>
-                    </tr>
+                    <TableRow key={k.task_id}>
+                      <TableCell>{k.title}</TableCell>
+                      <TableCell className="whitespace-nowrap text-muted-foreground">{when(k.anchor, k.offset)}</TableCell>
+                      <TableCell className="num">{k.completes_stage}</TableCell>
+                      <TableCell className="whitespace-nowrap">{k.owner_role}</TableCell>
+                      <TableCell>{k.applies_to_tier === "A" ? "Tier A only" : "All"}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           )}
         </Panel>
