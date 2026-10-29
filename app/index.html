@@ -5,7 +5,6 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <style>
@@ -162,7 +161,6 @@ main.fill>.view{min-width:0}
     <div class="actions">
       <span class="muted small" id="who"></span>
       <button id="reloadBtn" title="Reload everything from the database">Reload</button>
-      <input type="file" id="fileIn" accept=".xlsx,.xls" hidden>
       <button id="saveBtn" class="primary" title="Saves your changed and new rows to the database">Save</button>
       <button id="outBtn" hidden>Sign out</button>
     </div>
@@ -186,7 +184,7 @@ const ui = {q:"", flag:"", owner:"", place:"", stage:"", stageLt:"", state:"", k
 
 /* ---------- dates ---------- */
 const DAY = 864e5;
-function toDate(v){ if(v==null||v==="") return null; if(v instanceof Date) return new Date(Date.UTC(v.getFullYear(),v.getMonth(),v.getDate())); if(typeof v==="number"){ const d=XLSX.SSF.parse_date_code(v); return new Date(Date.UTC(d.y,d.m-1,d.d)); } const d=new Date(v); return isNaN(d)?null:new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); }
+function toDate(v){ if(v==null||v==="") return null; if(v instanceof Date) return new Date(Date.UTC(v.getFullYear(),v.getMonth(),v.getDate())); if(typeof v==="number") return new Date(Date.UTC(1899,11,30)+Math.floor(v)*DAY); const d=new Date(v); return isNaN(d)?null:new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); }
 const iso = d => d ? d.toISOString().slice(0,10) : "";
 const fmt = d => d ? d.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",timeZone:"UTC"}) : "";
 const fmtShort = d => d ? d.toLocaleDateString("en-GB",{day:"numeric",month:"short",timeZone:"UTC"}) : "";
@@ -195,25 +193,6 @@ function isBiz(d, hol){ const w=d.getUTCDay(); return w!==0 && w!==6 && !hol.has
 function nthBizDay(monthStart, n, hol){ let d=new Date(monthStart), c=0; while(true){ if(isBiz(d,hol)){ c++; if(c===n) return d; } d=new Date(+d+DAY); } }
 function bizBetween(a, b, hol){ let n=0; for(let d=new Date(a); d<=b; d=new Date(+d+DAY)) if(isBiz(d,hol)) n++; return n; }
 
-/* ---------- load ---------- */
-function readWorkbook(buf){
-  const wb = XLSX.read(buf,{type:"array",cellDates:true});
-  const db = {};
-  for(const s of SHEETS){
-    const ws = wb.Sheets[s];
-    db[s] = ws ? XLSX.utils.sheet_to_json(ws,{defval:null,raw:true}) : [];
-    db[s].forEach((r,i)=>{ Object.defineProperty(r,"_row",{value:i+2,enumerable:false,writable:true}); for(const k in r){ if(typeof r[k]==="string"){ r[k]=r[k].trim(); if(r[k]==="") r[k]=null; } } });
-  }
-  db._missing = SHEETS.filter(s=>!wb.Sheets[s]);
-  return db;
-}
-async function loadSample(){
-  try{ const bin = atob(document.getElementById("sampleDb").textContent.trim()); const u = new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); DB = readWorkbook(u); fileName="sphere_filing_db.xlsx"; document.getElementById("srcName").textContent="sample workbook"; compute(); route(); }
-  catch(e){ console.error(e); document.getElementById("main").innerHTML = dropHTML("Drop the Sphere filing workbook (.xlsx) here, or use Load workbook."); bindDrop(); }
-}
-function dropHTML(msg){ return `<div class="drop" id="drop"><b>${msg}</b><span class="note">The workbook is the database: one sheet per list, field names in row 1, one record per row.</span><label class="btn" for="fileIn">Choose file</label></div>`; }
-function loadFile(f){ const fr=new FileReader(); fr.onload=()=>{ try{ DB=readWorkbook(new Uint8Array(fr.result)); fileName=f.name; document.getElementById("srcName").textContent=f.name; compute(); route(); toast(`Loaded ${f.name}`); }catch(e){ toast("That file could not be read as a workbook. Check it is .xlsx."); } }; fr.readAsArrayBuffer(f); }
-function bindDrop(){ const el=document.body; el.addEventListener("dragover",e=>{e.preventDefault(); document.getElementById("drop")?.classList.add("hover");}); el.addEventListener("dragleave",()=>document.getElementById("drop")?.classList.remove("hover")); el.addEventListener("drop",e=>{e.preventDefault(); if(e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);}); }
 
 /* ---------- compute ---------- */
 function idx(rows,key){ const m=new Map(); rows.forEach(r=>{ if(r[key]!=null) m.set(String(r[key]),r); }); return m; }
@@ -327,7 +306,6 @@ const pct = (a,b) => b ? Math.round(a/b*100)+"%" : "–";
 /* ---------- integrity (the foreign keys Excel can't enforce) ---------- */
 function integrity(){
   const out=[]; const add=(level,sheet,row,msg)=>out.push({level,sheet,row,msg});
-  for(const s of DB._missing) add("Error",s,1,"Sheet is missing from the workbook");
   const pk = {Tasks:"task_id",Owners:"owner_id",Countries:"country_code",Regions:"region_code",Customers:"customer_id",Registrations:"registration_id",Runs:"run_id",Returns:"return_id",ReturnEvents:"event_id",Issues:"issue_id",BalancesNotices:"notice_id"};
   for(const [s,k] of Object.entries(pk)){ const seen=new Map(); DB[s].forEach(r=>{ const v=r[k]; if(v==null) add("Error",s,r._row,`No ${k}`); else if(seen.has(String(v))) add("Error",s,r._row,`Duplicate ${k} ${v} (also row ${seen.get(String(v))})`); else seen.set(String(v),r._row); }); }
   const has = (m,v) => v==null || m.has(String(v));
@@ -533,7 +511,7 @@ function viewRun(m){
     <section class="panel"><h3>Open issues, most severe first</h3><div class="tbl-wrap"><table><thead><tr><th>Issue</th><th>Sev</th><th>Category</th><th class="num">Returns blocked</th><th>Owner</th></tr></thead><tbody>
       ${issRows.map(x=>`<tr><td class="mono">${esc(x.i.issue_id)}</td><td>${sevChip(x.i.severity)}</td><td>${esc(x.i.category)}</td><td class="num">${jump(x.n,{issue:x.i.issue_id})}</td><td>${esc(C.ownerOf("I:"+x.i.issue_id,"Issue owner")||"–")}</td></tr>`).join("")}
     </tbody></table></div></section>
-    <section class="panel"><h3>Data checks</h3><p>${errs?chip(errs+" errors","c-bad"):chip("No errors","c-ok")} ${warns?chip(warns+" warnings","c-warn"):""}</p><p class="note">The workbook can't enforce links between sheets, so the app checks every link each time a workbook loads. Fix errors in Excel and load it again.</p><p><a href="#data" onclick="dv.sheet='Checks'">See every check</a></p></section>
+    <section class="panel"><h3>Data checks</h3><p>${errs?chip(errs+" errors","c-bad"):chip("No errors","c-ok")} ${warns?chip(warns+" warnings","c-warn"):""}</p><p class="note">The database enforces keys and rules on save; the app also re-checks every link each time it loads, so anything odd shows up here.</p><p><a href="#data" onclick="dv.sheet='Checks'">See every check</a></p></section>
   </div></div>`;
 }
 const jump = (n,f) => n ? `<a class="jump" href="#returns" title="Show these returns" onclick='go("returns",${esc(JSON.stringify(f)).replace(/'/g,"&#39;")});return false'>${n}</a>` : "0";
@@ -817,7 +795,7 @@ function viewData(m){
   let body;
   if(dv.sheet==="Checks"){
     const ch=C.checks, list=[...ch.filter(c=>c.level==="Error"),...ch.filter(c=>c.level!=="Error")];
-    body=`<p class="note">Excel can't enforce links between sheets, so these checks stand in for the database constraints: every id points at a row that exists, ownership and issue links point at exactly one thing, registration dates never overlap, blocked returns have an issue, and on hold or not required returns have a reason. Click a problem to open that row.</p>
+    body=`<p class="note">The database enforces these on save; the app re-checks them on every load: every id points at a row that exists, ownership and issue links point at exactly one thing, registration dates never overlap, blocked returns have an issue, and on hold or not required returns have a reason. Click a problem to open that row.</p>
     <div class="tbl-wrap"><table><thead><tr><th>Level</th><th>Sheet</th><th class="num">Row</th><th>Problem</th></tr></thead><tbody>${list.length?list.slice(0,800).map(c=>`<tr data-goto="${esc(c.sheet)}|${c.row}" style="cursor:pointer"><td>${chip(c.level,c.level==="Error"?"c-bad":"c-warn")}</td><td>${esc(c.sheet)}</td><td class="num">${c.row}</td><td class="wrapcell">${esc(c.msg)}</td></tr>`).join(""):`<tr><td colspan="4">${chip("All checks pass","c-ok")}</td></tr>`}</tbody></table></div>`;
   } else {
     const sc=SCHEMA[dv.sheet], rows=DB[dv.sheet];
@@ -930,7 +908,7 @@ async function loadDb(){
       SNAP[sheet] = new Map(db[sheet].map(r => [rowKey(pk, r), rowJson(r)]));
     });
     db._missing = [];
-    if(!db.Runs.length && !db.Owners.length){ emptyView(); return; }
+    if(!db.Runs.length && !db.Owners.length){ seedDb(); return; }
     DB = db; changes = 0; document.getElementById("saveBtn").textContent = "Save";
     compute(); route();
   }catch(e){ document.getElementById("main").innerHTML = `<div class="drop"><b>Could not load the database.</b><span class="note">${esc(e.message||String(e))}</span></div>`; }
@@ -960,17 +938,27 @@ async function saveDb(){
   }catch(e){ btn.textContent = `Save (${changes})`; toast("Save failed: " + (e.message||e)); }
   btn.disabled = false;
 }
-// an empty database: load a workbook (same layout as the prototype) and save it in
-function emptyView(){
-  document.getElementById("main").innerHTML = `<div class="drop" id="drop"><b>The database is empty.</b>
-    <span class="note">Load a workbook with one sheet per list and field names in row 1 (data/sample_db.xlsx in the repo), check it, then press Save to write it in.</span>
-    <label class="btn" for="fileIn">Choose workbook</label></div>`;
+// an empty database seeds itself from the sample files shipped with the app (app/seed/*.json)
+async function seedDb(){
+  const msg = t => document.getElementById("main").innerHTML = `<div class="drop"><b>Setting up the database…</b><span class="note">${esc(t)}</span></div>`;
+  try{
+    for(const [sheet, table, pk] of TABLES){
+      msg(`Loading ${table}`);
+      let rows = await (await fetch(`seed/${table}.json`)).json();
+      if(table === "regions") rows.sort((a, b) => (a.parent_region ? 1 : 0) - (b.parent_region ? 1 : 0));
+      const identity = pk.split(",").some(k => IDENTITY.has(k));
+      if(identity){ const { count } = await sb.from(table).select("*", { count: "exact", head: true }); if(count) continue; }
+      for(let i = 0; i < rows.length; i += 500){
+        msg(`Loading ${table}: ${Math.min(i + 500, rows.length).toLocaleString()} of ${rows.length.toLocaleString()}`);
+        const batch = rows.slice(i, i + 500);
+        const { error } = identity ? await sb.from(table).insert(batch) : await sb.from(table).upsert(batch, { onConflict: pk });
+        if(error) throw new Error(`${table}: ${error.message}`);
+      }
+    }
+    await loadDb(); toast("Database set up with the sample data");
+  }catch(e){ document.getElementById("main").innerHTML = `<div class="drop"><b>Setting up the database failed.</b><span class="note">${esc(e.message||String(e))}</span><button onclick="seedDb()">Try again</button></div>`; }
 }
-document.getElementById("fileIn").addEventListener("change", e => { const f = e.target.files[0]; e.target.value = ""; if(!f) return;
-  const fr = new FileReader(); fr.onload = () => { try{ DB = readWorkbook(new Uint8Array(fr.result)); for(const [sheet] of TABLES) SNAP[sheet] = new Map();
-      changes = TABLES.reduce((n, [sheet]) => n + (DB[sheet]||[]).length, 0); document.getElementById("saveBtn").textContent = `Save (${changes})`;
-      compute(); route(); toast(`Loaded ${f.name}. Press Save to write ${changes} rows.`); }
-    catch(err){ toast("That file could not be read as a workbook."); } }; fr.readAsArrayBuffer(f); });
+window.seedDb = seedDb;
 // sign in with a one-time email link; the database only answers signed-in people
 function signInView(msg){
   document.getElementById("main").innerHTML = `<div class="drop"><b>Sign in to Workbench</b>
