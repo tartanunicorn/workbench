@@ -21,7 +21,7 @@ An operations workbench for the monthly tax filing run, built around tasks. Ever
 
 ## Set up
 
-1. **Database.** Create a Supabase project. Run the two files in `supabase/migrations/` in order in the SQL editor, or run `supabase db push`.
+1. **Database.** Create a Supabase project. Run the files in `supabase/migrations/` in order in the SQL editor, or run `supabase db push`.
 2. **Members.** Only emails in the `members` table can read or write: `insert into members (email) values ('you@company.com');`
 3. **Sign-in.** In Authentication → URL configuration, set the Site URL to the app's address (the Vercel URL, or `http://localhost:8000` locally). Add the same address to Redirect URLs.
 4. **Config.** Put the project URL and publishable (anon) key into `app/config.js`.
