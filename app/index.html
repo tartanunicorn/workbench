@@ -981,12 +981,14 @@ function signInView(msg){
     document.getElementById("signmsg").textContent = error ? error.message : "Check your email for the sign-in link."; });
 }
 async function boot(){
+  // demo mode: no sign-in, straight into the data (set requireSignIn in config.js to turn it back on)
+  if(!window.WORKBENCH.requireSignIn){ loadDb(); return; }
   const { data: { session } } = await sb.auth.getSession();
   if(!session){ signInView(); return; }
   document.getElementById("who").textContent = session.user.email; document.getElementById("outBtn").hidden = false;
   loadDb();
 }
-sb.auth.onAuthStateChange((ev) => { if(ev === "SIGNED_IN" && !DB) boot(); if(ev === "SIGNED_OUT"){ DB = null; signInView("Signed out."); } });
+sb.auth.onAuthStateChange((ev) => { if(!window.WORKBENCH.requireSignIn) return; if(ev === "SIGNED_IN" && !DB) boot(); if(ev === "SIGNED_OUT"){ DB = null; signInView("Signed out."); } });
 document.getElementById("saveBtn").addEventListener("click", saveDb);
 document.getElementById("outBtn").addEventListener("click", () => sb.auth.signOut());
 document.getElementById("reloadBtn").addEventListener("click", () => { const b = document.getElementById("reloadBtn");
