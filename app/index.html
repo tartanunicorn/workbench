@@ -1,0 +1,1000 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Workbench</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<style>
+/* Layout: an ops console. Sticky top bar with run dates, tabbed views, dense tables, a detail drawer on the right. */
+:root{
+  --bg:#f5f6f8; --panel:#ffffff; --ink:#18212e; --muted:#5d6878; --line:#dde1e8; --soft:#eceff4;
+  --accent:#1d5c8f; --accent-ink:#ffffff; --accent-soft:#e3edf6;
+  --ok:#1f7a4d; --ok-soft:#e2f2e9; --warn:#a15c00; --warn-soft:#fbefdc; --bad:#b4232c; --bad-soft:#fbe4e5; --info:#5b4bb5; --info-soft:#ebe8f8;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11161d; --panel:#18202a; --ink:#e4e9f0; --muted:#97a3b3; --line:#2a3542; --soft:#1f2934;
+  --accent:#6aa9dc; --accent-ink:#0d1620; --accent-soft:#1c3247;
+  --ok:#5cc28c; --ok-soft:#173326; --warn:#e3a54a; --warn-soft:#3a2b14; --bad:#f07a80; --bad-soft:#3d1d21; --info:#a99cf0; --info-soft:#29254a;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11161d; --panel:#18202a; --ink:#e4e9f0; --muted:#97a3b3; --line:#2a3542; --soft:#1f2934;
+  --accent:#6aa9dc; --accent-ink:#0d1620; --accent-soft:#1c3247;
+  --ok:#5cc28c; --ok-soft:#173326; --warn:#e3a54a; --warn-soft:#3a2b14; --bad:#f07a80; --bad-soft:#3d1d21; --info:#a99cf0; --info-soft:#29254a;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--panel);border-bottom:1px solid var(--line)}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;padding-block:10px}
+.brand{font-family:var(--f-display);font-weight:600;font-size:18px;letter-spacing:.01em;display:flex;align-items:baseline;gap:8px}
+.brand small{font-family:var(--f-body);font-weight:400;font-size:12px;color:var(--muted)}
+.dates{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.dates b{color:var(--ink);font-weight:600}
+.runpick select{font:inherit;font-size:13px;font-weight:600;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+button,.btn{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:6px;padding:6px 11px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+nav.tabs{display:flex;gap:2px;overflow-x:auto}
+nav.tabs a{padding:9px 12px;color:var(--muted);text-decoration:none;border-bottom:2px solid transparent;white-space:nowrap;font-weight:500}
+nav.tabs a[aria-current="page"]{color:var(--ink);border-color:var(--accent)}
+nav.tabs .count{font-family:var(--f-mono);font-size:11px;margin-left:5px;padding:1px 5px;border-radius:8px;background:var(--bad-soft);color:var(--bad)}
+main{padding-block:18px 48px}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;text-wrap:balance;margin:0}
+h2{font-size:17px}
+h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-family:var(--f-body)}
+.grid{display:grid;gap:14px}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.kpi .v{font-family:var(--f-display);font-size:28px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1}
+.kpi .l{font-size:12px;color:var(--muted)}
+.kpi.bad .v{color:var(--bad)} .kpi.warn .v{color:var(--warn)} .kpi.ok .v{color:var(--ok)}
+.two{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)}
+@media (max-width:860px){.two{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;min-width:0;display:flex;flex-direction:column;gap:10px}
+.funnel{display:grid;grid-template-columns:minmax(120px,170px) 1fr 44px;gap:6px 10px;align-items:center;font-size:13px}
+.funnel .track{height:16px;background:var(--soft);border-radius:3px;position:relative;overflow:hidden}
+.funnel .fill{position:absolute;inset:0 auto 0 0;background:var(--accent)}
+.funnel .fill.warp{background:var(--info);opacity:.85}
+.funnel .n{font-family:var(--f-mono);font-size:12px;text-align:right}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.timeline{position:relative;height:56px;margin:4px 8px 0}
+.timeline .axis{position:absolute;left:0;right:0;top:22px;height:2px;background:var(--line)}
+.timeline .m{position:absolute;top:14px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;font-size:11px;color:var(--muted);white-space:nowrap}
+.timeline .m .dot{width:10px;height:10px;border-radius:50%;background:var(--panel);border:2px solid var(--muted);margin-bottom:6px}
+.timeline .m.key .dot{border-color:var(--accent);background:var(--accent)}
+.timeline .m.key{color:var(--ink);font-weight:600}
+.timeline .now{position:absolute;top:0;bottom:12px;width:2px;background:var(--bad)}
+.timeline .now span{position:absolute;top:-2px;left:5px;font-size:11px;color:var(--bad);font-weight:600;white-space:nowrap}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;background:var(--soft);position:sticky;top:0;cursor:pointer;user-select:none}
+th.num,td.num{text-align:right;font-variant-numeric:tabular-nums}
+td.mono{font-family:var(--f-mono);font-size:12px}
+tbody tr[data-id]{cursor:pointer}
+tbody tr[data-id]:hover{background:var(--soft)}
+a.jump{color:var(--accent);font-weight:600;text-decoration:none;border-bottom:1px dotted currentColor}
+a.jump:hover{border-bottom-style:solid}
+tbody tr.sel{background:var(--accent-soft)}
+.chip{display:inline-block;font-size:11px;font-weight:600;padding:2px 7px;border-radius:10px;letter-spacing:.02em;white-space:nowrap}
+.c-ok{background:var(--ok-soft);color:var(--ok)} .c-warn{background:var(--warn-soft);color:var(--warn)} .c-bad{background:var(--bad-soft);color:var(--bad)} .c-info{background:var(--info-soft);color:var(--info)} .c-mut{background:var(--soft);color:var(--muted)}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.filters input,.filters select,.drawer select,.drawer input,.drawer textarea{font:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);min-width:0}
+.filters input[type=search]{width:220px;max-width:100%}
+.muted{color:var(--muted)} .small{font-size:12px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+.layout.open{grid-template-columns:minmax(0,1fr) 380px}
+@media (max-width:1000px){.layout.open{grid-template-columns:minmax(0,1fr)}}
+.drawer{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:12px;align-self:start;position:sticky;top:120px;max-height:calc(100vh - 140px);overflow:auto}
+.drawer select,.drawer input{width:100%}
+.kv{display:grid;grid-template-columns:120px minmax(0,1fr);gap:4px 10px;font-size:13px}
+.kv dt{color:var(--muted)} .kv dd{margin:0;overflow-wrap:anywhere}
+.reasons{margin:0;padding-left:18px;font-size:13px}
+.ev{font-size:12px;border-left:2px solid var(--line);padding:2px 0 2px 10px}
+.drop{border:2px dashed var(--line);border-radius:10px;padding:28px;text-align:center;background:var(--panel);display:flex;flex-direction:column;gap:10px;align-items:center}
+.drop.hover{border-color:var(--accent);background:var(--accent-soft)}
+.note{font-size:12px;color:var(--muted);max-width:70ch}
+.toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));right:max(16px,env(safe-area-inset-right,0px));background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:6px;font-size:13px;z-index:20}
+.sev-row{display:flex;gap:6px;flex-wrap:wrap}
+.check-list li{margin-bottom:4px}
+.more{display:flex;justify-content:center;padding:10px}
+
+/* App shell: header on top, the view fills the rest; list views scroll inside their tables */
+html,body{height:100%}
+body{margin:0;display:flex;flex-direction:column;overflow:hidden}
+header.top{position:relative;top:auto;flex:none}
+main{flex:1;min-height:0;overflow:auto}
+main.fill{overflow:hidden;display:flex;flex-direction:column;padding-block:14px}
+main.fill>.view{flex:1;min-height:0;display:flex;flex-direction:column;gap:12px}
+main.fill .view>.tbl-wrap,main.fill .stack>.tbl-wrap{flex:1;min-height:0;overflow:auto}
+main.fill .layout{flex:1;min-height:0}
+main.fill .layout>.view{min-height:0;height:100%;display:flex;flex-direction:column;gap:12px}
+main.fill .drawer{position:static;max-height:100%;height:100%}
+main.fill .split{flex:1;min-height:0;display:grid;grid-template-rows:minmax(0,1.4fr) minmax(0,1fr);gap:12px}
+main.fill .split>.stack,main.fill .cols>.stack{display:flex;flex-direction:column;gap:8px;min-height:0}
+main.fill .cols{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:14px}
+@media (max-width:1000px){main.fill .layout.open>.view{display:none} main.fill .layout.open{grid-template-rows:minmax(0,1fr)} main.fill .cols{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,2fr) minmax(0,1fr)}}
+.note{margin:0}
+.tstatus{font:inherit;font-size:12px;padding:3px 6px;border:1px solid var(--line);border-radius:5px;background:var(--panel);color:var(--ink)}
+.tlink{color:inherit;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}.tlink:hover{color:var(--accent)}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.steps li{display:flex;flex-direction:column;gap:1px;padding:6px 8px;border:1px solid var(--line);border-radius:6px}
+.steps li.done span:first-of-type{color:var(--muted);text-decoration:line-through}
+.steps label{display:flex;gap:8px;align-items:flex-start;font-size:13px;cursor:pointer;text-align:left}
+.drawer .steps input[type=checkbox]{width:auto;flex:none;margin:2px 0 0;padding:0}
+.steps .late{color:var(--bad);font-weight:600}
+.subtabs{display:flex;gap:4px;border-bottom:1px solid var(--line);flex:none;overflow-x:auto}
+.subtab{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;padding:7px 12px;font-weight:600;color:var(--muted);white-space:nowrap}
+.subtab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.dtable td.ed{cursor:text;min-width:60px}
+.dtable td.ed:hover{background:var(--accent-soft)}
+.dtable td.ro{cursor:default;color:var(--muted)}
+.dtable td.ro:hover{background:none}
+.dtable td.broken{color:var(--bad);font-weight:600;background:var(--bad-soft)}
+.dtable tr.rowbad td:first-child{box-shadow:inset 3px 0 0 var(--bad)}
+.dtable tr.rowwarn td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
+.dtable tr.flash{background:var(--warn-soft)}
+.dtable td:has(.cell-ed){padding:2px 4px}
+.cell-ed{font:inherit;font-size:13px;padding:4px 6px;border:1px solid var(--accent);border-radius:4px;background:var(--panel);color:var(--ink);width:100%;min-width:140px}
+th .fk{font-weight:400;text-transform:none;letter-spacing:0;color:var(--accent)}
+td.wrapcell{white-space:normal;min-width:280px;max-width:420px}
+.tbl-wrap{max-width:100%;min-width:0}
+main.fill>.view{min-width:0}
+@media (prefers-reduced-motion:no-preference){.funnel .fill{transition:width .4s ease}}
+</style>
+
+<header class="top">
+  <div class="wrap bar">
+    <div class="brand">Workbench <small id="srcName">Filing run</small></div>
+    <div class="dates" id="dates"></div>
+    <div class="actions">
+      <span class="muted small" id="who"></span>
+      <button id="reloadBtn" title="Reload everything from the database">Reload</button>
+      <input type="file" id="fileIn" accept=".xlsx,.xls" hidden>
+      <button id="saveBtn" class="primary" title="Saves your changed and new rows to the database">Save</button>
+      <button id="outBtn" hidden>Sign out</button>
+    </div>
+  </div>
+  <nav class="wrap tabs" id="tabs">
+    <a href="#run">Run</a><a href="#returns">Returns</a><a href="#customers">Customers</a><a href="#owners">Owners</a><a href="#tasks">Tasks</a><a href="#issues">Issues</a><a href="#data">Data<span class="count" id="errCount" hidden></span></a>
+  </nav>
+</header>
+<main class="wrap" id="main"><div class="drop" id="drop"><b>Loading…</b></div></main>
+<div class="toast" id="toast" hidden></div>
+
+
+<script>
+"use strict";
+/* ---------- state ---------- */
+const SHEETS = ["Settings","Runs","Owners","Ownerships","Countries","Regions","ReturnTypes","ReturnTypeRules","Customers","Registrations","Returns","ReturnEvents","Issues","IssueLinks","BalancesNotices","Tasks","TaskRelations","Holidays"];
+const STAGES = ["1 Not started","2 Data synced","3 Generated","4 In review","5 Ready to release","6 Released","7 Customer approved","8 Submitted","9 Confirmed / paid"];
+const STATES = ["Open","Blocked","On hold","Done","Not required"];
+let DB = null, C = null, fileName = "sphere_filing_db.xlsx";
+const ui = {q:"", flag:"", owner:"", place:"", stage:"", stageLt:"", state:"", kind:"", tier:"", customer:"", issue:"", prepay:"", unowned:"", task:"", sort:"flagRank", dir:1, limit:1500, sel:null};
+
+/* ---------- dates ---------- */
+const DAY = 864e5;
+function toDate(v){ if(v==null||v==="") return null; if(v instanceof Date) return new Date(Date.UTC(v.getFullYear(),v.getMonth(),v.getDate())); if(typeof v==="number"){ const d=XLSX.SSF.parse_date_code(v); return new Date(Date.UTC(d.y,d.m-1,d.d)); } const d=new Date(v); return isNaN(d)?null:new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); }
+const iso = d => d ? d.toISOString().slice(0,10) : "";
+const fmt = d => d ? d.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",timeZone:"UTC"}) : "";
+const fmtShort = d => d ? d.toLocaleDateString("en-GB",{day:"numeric",month:"short",timeZone:"UTC"}) : "";
+const ymd = (y,m,d) => new Date(Date.UTC(y,m,d));
+function isBiz(d, hol){ const w=d.getUTCDay(); return w!==0 && w!==6 && !hol.has(iso(d)); }
+function nthBizDay(monthStart, n, hol){ let d=new Date(monthStart), c=0; while(true){ if(isBiz(d,hol)){ c++; if(c===n) return d; } d=new Date(+d+DAY); } }
+function bizBetween(a, b, hol){ let n=0; for(let d=new Date(a); d<=b; d=new Date(+d+DAY)) if(isBiz(d,hol)) n++; return n; }
+
+/* ---------- load ---------- */
+function readWorkbook(buf){
+  const wb = XLSX.read(buf,{type:"array",cellDates:true});
+  const db = {};
+  for(const s of SHEETS){
+    const ws = wb.Sheets[s];
+    db[s] = ws ? XLSX.utils.sheet_to_json(ws,{defval:null,raw:true}) : [];
+    db[s].forEach((r,i)=>{ Object.defineProperty(r,"_row",{value:i+2,enumerable:false,writable:true}); for(const k in r){ if(typeof r[k]==="string"){ r[k]=r[k].trim(); if(r[k]==="") r[k]=null; } } });
+  }
+  db._missing = SHEETS.filter(s=>!wb.Sheets[s]);
+  return db;
+}
+async function loadSample(){
+  try{ const bin = atob(document.getElementById("sampleDb").textContent.trim()); const u = new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); DB = readWorkbook(u); fileName="sphere_filing_db.xlsx"; document.getElementById("srcName").textContent="sample workbook"; compute(); route(); }
+  catch(e){ console.error(e); document.getElementById("main").innerHTML = dropHTML("Drop the Sphere filing workbook (.xlsx) here, or use Load workbook."); bindDrop(); }
+}
+function dropHTML(msg){ return `<div class="drop" id="drop"><b>${msg}</b><span class="note">The workbook is the database: one sheet per list, field names in row 1, one record per row.</span><label class="btn" for="fileIn">Choose file</label></div>`; }
+function loadFile(f){ const fr=new FileReader(); fr.onload=()=>{ try{ DB=readWorkbook(new Uint8Array(fr.result)); fileName=f.name; document.getElementById("srcName").textContent=f.name; compute(); route(); toast(`Loaded ${f.name}`); }catch(e){ toast("That file could not be read as a workbook. Check it is .xlsx."); } }; fr.readAsArrayBuffer(f); }
+function bindDrop(){ const el=document.body; el.addEventListener("dragover",e=>{e.preventDefault(); document.getElementById("drop")?.classList.add("hover");}); el.addEventListener("dragleave",()=>document.getElementById("drop")?.classList.remove("hover")); el.addEventListener("drop",e=>{e.preventDefault(); if(e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);}); }
+
+/* ---------- compute ---------- */
+function idx(rows,key){ const m=new Map(); rows.forEach(r=>{ if(r[key]!=null) m.set(String(r[key]),r); }); return m; }
+function compute(){
+  const S = Object.fromEntries(DB.Settings.map(r=>[r.key,r.value]));
+  const hol = new Set(DB.Holidays.map(h=>iso(toDate(h.date))).filter(Boolean));
+  const asOf = toDate(S.as_of_date) || toDate(new Date());
+  const runs = idx(DB.Runs,"run_id");
+  const run = runs.get(String(ui.run||"")) || runs.get(String(S.current_run)) || DB.Runs.find(r=>r.status==="Open") || DB.Runs[0];
+  const rm = toDate(run.run_month);
+  const relDay = +S.release_business_day||5, subDay = +S.submit_calendar_day||19, buffer = +S.submit_buffer_days||0;
+  const bd = n => nthBizDay(rm,n,hol);
+  const dates = {asOf, rm, BD1:bd(1), BD5:bd(relDay), CD19:ymd(rm.getUTCFullYear(),rm.getUTCMonth(),subDay)};
+  dates.target = new Date(+dates.CD19 - buffer*DAY);
+  dates.CD8 = ymd(rm.getUTCFullYear(),rm.getUTCMonth(),8); dates.CD12 = ymd(rm.getUTCFullYear(),rm.getUTCMonth(),12);
+  dates.expStage = Math.min(6, 1 + (asOf>rm ? bizBetween(rm, new Date(+asOf-DAY), hol) : 0));
+  const owners = idx(DB.Owners,"owner_id"), customers = idx(DB.Customers,"customer_id"), regs = idx(DB.Registrations,"registration_id");
+  const countries = idx(DB.Countries,"country_code"), regions = idx(DB.Regions,"region_code"), issues = idx(DB.Issues,"issue_id"), types = idx(DB.ReturnTypes,"return_type_id");
+  const openIssue = i => i && !["Resolved","Won't fix"].includes(i.status);
+  // ownership lookup: target -> role -> active row (latest from_date)
+  const own = new Map();
+  for(const o of DB.Ownerships){
+    const f=toDate(o.from_date), t=toDate(o.to_date);
+    if((f && f>asOf) || (t && t<asOf)) continue;
+    const tgt = o.return_id ? "R:"+o.return_id : o.run_id ? "U:"+o.run_id : o.issue_id ? "I:"+o.issue_id : o.task_id ? "T:"+o.task_id : null;
+    if(!tgt) continue;
+    if(!own.has(tgt)) own.set(tgt,{});
+    const cur = own.get(tgt)[o.role];
+    if(!cur || (toDate(cur.from_date)||0) <= (f||0)) own.get(tgt)[o.role] = o;
+  }
+  const ownerOf = (tgt,role) => own.get(tgt)?.[role]?.owner_id || "";
+  const linksByReturn = new Map(), linksByIssue = new Map();
+  for(const l of DB.IssueLinks){ if(l.return_id){ (linksByReturn.get(l.return_id)||linksByReturn.set(l.return_id,[]).get(l.return_id)).push(l); } (linksByIssue.get(l.issue_id)||linksByIssue.set(l.issue_id,[]).get(l.issue_id)).push(l); }
+  const evByReturn = new Map(); for(const e of DB.ReturnEvents){ (evByReturn.get(e.return_id)||evByReturn.set(e.return_id,[]).get(e.return_id)).push(e); }
+  // the task graph: Subtask of gives each task its parent; a Return header task carries the return_id
+  const tasksById = new Map(DB.Tasks.map(t=>[String(t.task_id),t])), parentOf = new Map(), blockedBy = new Map(), blocks = new Map();
+  for(const l of (DB.TaskRelations||[])){ const a=String(l.from_task_id), b=String(l.to_task_id);
+    if(l.relation_type==="Subtask of") parentOf.set(a,b);
+    else if(l.relation_type==="Blocks"){ (blockedBy.get(b)||blockedBy.set(b,[]).get(b)).push(a); (blocks.get(a)||blocks.set(a,[]).get(a)).push(b); } }
+  const retOfTask = t => t.return_id || tasksById.get(parentOf.get(String(t.task_id)))?.return_id || null;
+  const headOfReturn = new Map(), headOfRun = new Map();
+  for(const t of DB.Tasks){ if(t.kind==="Return" && t.return_id) headOfReturn.set(String(t.return_id),t); if(t.kind==="Run" && t.run_id) headOfRun.set(String(t.run_id),t); }
+  const stepsByReturn = new Map(); for(const t of DB.Tasks){ if(t.kind==="Run"||t.kind==="Return") continue; const rid=retOfTask(t); if(rid) (stepsByReturn.get(rid)||stepsByReturn.set(rid,[]).get(rid)).push(t); }
+  const gapAmt = +S.review_gap_amount||1000, gapPct = +S.review_gap_pct||0.05, newDays = +S.new_registration_days||60, riskDays = +S.at_risk_days||3;
+  // a return type's rules on a date: the latest ReturnTypeRules row on or before it, field by field
+  const rulesByType = new Map(); for(const r of (DB.ReturnTypeRules||[])){ const k=String(r.return_type_id); (rulesByType.get(k)||rulesByType.set(k,[]).get(k)).push(r); }
+  const typeAt = (id, on) => { const base=types.get(String(id)); if(!base) return null; const t={...base}, best={};
+    for(const r of (rulesByType.get(String(id))||[])){ const vf=toDate(r.valid_from); if(on && vf && vf>on) continue; if(!best[r.field] || (vf||0)>=(toDate(best[r.field].valid_from)||0)) best[r.field]=r; }
+    for(const f in best) t[f]=best[f].value; return t; };
+  const typeOf = (reg, on) => reg ? typeAt(reg.return_type_id, on || toDate(run.period_end)) : null;
+  const placeOf = ty => ty ? (ty.region_code ? regions.get(ty.region_code) : countries.get(ty.country_code)) : null;
+  const rows = [];
+  for(const r of DB.Returns){
+    if(String(r.run_id)!==String(run.run_id)) continue;
+    const reg = regs.get(String(r.registration_id)), cu = reg && customers.get(String(reg.customer_id)), ty = typeOf(reg, toDate(r.period_end)), pl = placeOf(ty);
+    const placeCode = ty ? (ty.region_code || ty.country_code) : "?";
+    const stageN = parseInt(String(r.stage||"0"),10)||0;
+    const stat = toDate(r.statutory_due) || statFromType(ty, rm, toDate(r.period_end));
+    const submitDue = stat && stat < dates.CD19 ? stat : dates.CD19;
+    const links = (linksByReturn.get(r.return_id)||[]).filter(l=>openIssue(issues.get(l.issue_id)));
+    const calc=+r.calculated||0, coll=+r.collected||0, gap=coll-calc;
+    const reasons=[];
+    if(r.kind && r.kind!=="Regular") reasons.push(`${r.kind} return`);
+    if(Math.abs(gap)>gapAmt) reasons.push(`Collected vs calculated gap over ${gapAmt.toLocaleString()}`);
+    else if(calc && Math.abs(gap)/calc>gapPct) reasons.push(`Collected vs calculated gap over ${Math.round(gapPct*100)}%`);
+    const af = reg && toDate(reg.active_from), pe = toDate(r.period_end);
+    if(af && pe && (pe-af)/DAY <= newDays) reasons.push(reg.notes && /frequency|moved/i.test(reg.notes) ? "Frequency changed recently" : "New registration");
+    if(ty && ty.workflow==="Prepayment") reasons.push("Prepayment return type");
+    if(cu && cu.internal_review==="Yes") reasons.push("Customer needs internal review");
+    if(links.length) reasons.push("Open issue linked");
+    const tier = reasons.length ? "A" : "B";
+    const submitted = toDate(r.submitted_on);
+    let flag;
+    if(r.state==="Not required") flag="N/A";
+    else if(r.state==="On hold") flag="On hold";
+    else if(r.state==="Blocked") flag = links.length ? "Blocked" : "Blocked, no issue";
+    else if(stageN>=8) flag = submitted && submitted>submitDue ? "Filed late" : "Done";
+    else if(asOf>submitDue) flag="Missed deadline";
+    else if(stageN<6 && asOf>dates.BD5) flag="Late release";
+    else if((submitDue-asOf)/DAY<=riskDays) flag="Submit at risk";
+    else if(pe && pe>=asOf && stageN<6) flag="Period open";
+    else if(stageN<dates.expStage) flag="Behind plan";
+    else flag="On track";
+    const prep = ownerOf("R:"+r.return_id,"Preparer");
+    const steps = (stepsByReturn.get(r.return_id)||[]).slice().sort((a,b)=>(+a.completes_stage||0)-(+b.completes_stage||0));
+    rows.push({r, reg, cu, ty, pl, placeCode, placeName: pl?.name||placeCode, stageN, stat, submitDue, links, gap, tier, reasons, flag,
+      flagRank: FLAGS[flag]?.rank ?? 9, attention: !["On track","Done","N/A","On hold","Period open"].includes(flag),
+      prep, rev: ownerOf("R:"+r.return_id,"Reviewer"), rel: ownerOf("R:"+r.return_id,"Release owner"), appr: ownerOf("R:"+r.return_id,"Customer approver"),
+      automation: ty?.automation||"", steps, stepsDone: steps.filter(t=>t.status==="Done"||t.status==="Skipped").length, events: evByReturn.get(r.return_id)||[]});
+  }
+  const rowById = new Map(rows.map(x=>[x.r.return_id,x]));
+  const taskOwner = t => ownerOf("T:"+t.task_id,"Task owner") || (retOfTask(t) && t.owner_role ? (t.owner_role==="Preparer" && /WARP/.test(t.title) ? "WARP" : ownerOf("R:"+retOfTask(t),t.owner_role)) : "");
+  const tasks = DB.Tasks.filter(t=>String(t.run_id)===String(run.run_id) && t.kind!=="Run" && t.kind!=="Return").map(t=>{ const due=toDate(t.due_date); const done=["Done","Skipped"].includes(t.status);
+    const tflag = done ? (t.status==="Done"?"Done":"Skipped") : !due ? "No due date" : due<asOf ? "Overdue" : +due===+asOf ? "Due today" : (due-asOf)/DAY<=2 ? "Due soon" : "Upcoming";
+    const rid=retOfTask(t); return {t, due, tflag, owner: taskOwner(t), rank: TFLAGS[tflag].rank, rid, ret: rid ? rowById.get(rid) : null, blockedBy: (blockedBy.get(String(t.task_id))||[]).map(id=>tasksById.get(id)).filter(b=>b&&!["Done","Skipped"].includes(b.status))}; });
+  C = {S, hol, dates, run, rows, rowById, tasks, owners, customers, regs, countries, regions, types, issues, linksByIssue, own, ownerOf, openIssue, taskOwner, typeOf, typeAt, rulesByType, placeOf, tasksById, parentOf, blockedBy, blocks, retOfTask, headOfReturn, headOfRun};
+  C.checks = integrity();
+  const errs = C.checks.filter(c=>c.level==="Error").length;
+  const ec = document.getElementById("errCount"); ec.hidden = !errs; ec.textContent = errs;
+  renderDates();
+}
+function statFromType(ty, rm, pe){ if(!ty || ty.due_value==null || ty.due_value==="") return null; if(ty.due_rule==="Days after period end") return pe ? new Date(+pe + (+ty.due_value)*DAY) : null; return ymd(rm.getUTCFullYear(),rm.getUTCMonth(),+ty.due_value); }
+const TFLAGS = {"Overdue":{rank:0,c:"c-bad"},"Due today":{rank:1,c:"c-warn"},"No due date":{rank:2,c:"c-warn"},"Due soon":{rank:3,c:"c-info"},"Upcoming":{rank:4,c:"c-mut"},"Done":{rank:5,c:"c-ok"},"Skipped":{rank:6,c:"c-mut"}};
+function anchorDate(anchor, offset, rm, hol){ if(anchor==="CD") return ymd(rm.getUTCFullYear(),rm.getUTCMonth(),+offset); const n=+offset; if(n>0) return nthBizDay(rm,n,hol); let d=new Date(+rm-DAY), c=0; while(true){ if(isBiz(d,hol)){ c++; if(c===1-n) return d; } d=new Date(+d-DAY); } }
+const FLAGS = {"Missed deadline":{rank:0,c:"c-bad"},"Blocked, no issue":{rank:1,c:"c-bad"},"Blocked":{rank:2,c:"c-bad"},"Late release":{rank:3,c:"c-bad"},"Submit at risk":{rank:4,c:"c-warn"},"Behind plan":{rank:5,c:"c-warn"},"Filed late":{rank:6,c:"c-warn"},"On track":{rank:7,c:"c-ok"},"Period open":{rank:7.5,c:"c-info"},"Done":{rank:8,c:"c-ok"},"On hold":{rank:9,c:"c-mut"},"N/A":{rank:10,c:"c-mut"}};
+const chip = (t,c) => `<span class="chip ${c||FLAGS[t]?.c||"c-mut"}">${esc(t)}</span>`;
+function esc(s){ return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+const money = n => (n==null||n==="")?"":(+n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const pct = (a,b) => b ? Math.round(a/b*100)+"%" : "–";
+
+/* ---------- integrity (the foreign keys Excel can't enforce) ---------- */
+function integrity(){
+  const out=[]; const add=(level,sheet,row,msg)=>out.push({level,sheet,row,msg});
+  for(const s of DB._missing) add("Error",s,1,"Sheet is missing from the workbook");
+  const pk = {Tasks:"task_id",Owners:"owner_id",Countries:"country_code",Regions:"region_code",Customers:"customer_id",Registrations:"registration_id",Runs:"run_id",Returns:"return_id",ReturnEvents:"event_id",Issues:"issue_id",BalancesNotices:"notice_id"};
+  for(const [s,k] of Object.entries(pk)){ const seen=new Map(); DB[s].forEach(r=>{ const v=r[k]; if(v==null) add("Error",s,r._row,`No ${k}`); else if(seen.has(String(v))) add("Error",s,r._row,`Duplicate ${k} ${v} (also row ${seen.get(String(v))})`); else seen.set(String(v),r._row); }); }
+  const has = (m,v) => v==null || m.has(String(v));
+  const fk = (s,r,col,m,target) => { if(r[col]!=null && !m.has(String(r[col]))) add("Error",s,r._row,`${col} ${r[col]} not found in ${target}`); };
+  const {owners,customers,regs,countries,regions,issues} = C; const runs=idx(DB.Runs,"run_id"), rets=idx(DB.Returns,"return_id"), tasksIdx=idx(DB.Tasks,"task_id"), notices=idx(DB.BalancesNotices,"notice_id");
+  for(const r of DB.Regions){ fk("Regions",r,"country_code",countries,"Countries"); if(r.parent_region){ const p=regions.get(r.parent_region); if(!p) add("Error","Regions",r._row,`parent_region ${r.parent_region} not found`); else if(p.country_code!==r.country_code) add("Error","Regions",r._row,"Parent region is in a different country"); } }
+  const types=C.types;
+  for(const r of (DB.ReturnTypeRules||[])){ fk("ReturnTypeRules",r,"return_type_id",types,"ReturnTypes");
+    if(!RULE_FIELDS.includes(r.field)) add("Error","ReturnTypeRules",r._row,`field must be one of ${RULE_FIELDS.join(", ")}`);
+    if(!toDate(r.valid_from)) add("Error","ReturnTypeRules",r._row,"A rule needs valid_from");
+    if((r.field==="default_preparer"||r.field==="default_reviewer") && r.value!=null && r.value!=="" && !owners.has(String(r.value))) add("Error","ReturnTypeRules",r._row,`${r.value} is not in Owners`);
+    if(r.field==="automation" && r.value && !AUTO.includes(r.value)) add("Error","ReturnTypeRules",r._row,`automation must be one of ${AUTO.join(", ")}`);
+    if(r.field==="due_rule" && r.value && !DUE_RULES.includes(r.value)) add("Error","ReturnTypeRules",r._row,`due_rule must be one of ${DUE_RULES.join(", ")}`); }
+  { const seen=new Map(); for(const r of (DB.ReturnTypeRules||[])){ const k=[r.return_type_id,r.field,iso(toDate(r.valid_from))].join("|"); if(seen.has(k)) add("Error","ReturnTypeRules",r._row,`Two ${r.field} rules for ${r.return_type_id} start on the same day`); seen.set(k,1); } }
+  const pe0 = toDate(C.run.period_end);
+  for(const t0 of DB.ReturnTypes){ const t={...C.typeAt(t0.return_type_id, pe0), _row:t0._row}; fk("ReturnTypes",t,"country_code",countries,"Countries"); fk("ReturnTypes",t,"region_code",regions,"Regions");
+    if(t.region_code && regions.get(t.region_code) && regions.get(t.region_code).country_code!==t.country_code) add("Error","ReturnTypes",t._row,`Region ${t.region_code} is not in country ${t.country_code}`);
+    if(t.active!=="No" && !t.default_preparer) add("Warning","ReturnTypes",t._row,`${t.name} has no default preparer`);
+    if(t.active!=="No" && (t.due_value==null||t.due_value==="")) add("Warning","ReturnTypes",t._row,`${t.name} has no due rule value; returns fall back to CD19`);
+    if(t.active!=="No" && !DB.Tasks.some(x=>x.return_type_id===t.return_type_id)) add("Warning","ReturnTypes",t._row,`${t.name} has no checklist; its returns start with no steps`); }
+  for(const r of DB.Customers){ fk("Customers",r,"release_owner",owners,"Owners"); fk("Customers",r,"customer_approver",owners,"Owners"); }
+  const ranges=new Map();
+  for(const r of DB.Registrations){
+    fk("Registrations",r,"customer_id",customers,"Customers"); fk("Registrations",r,"return_type_id",types,"ReturnTypes"); fk("Registrations",r,"verified_by",owners,"Owners");
+    if(r.return_type_id==null) add("Error","Registrations",r._row,"No return type");
+    const ty=types.get(String(r.return_type_id));
+    const k=[r.customer_id,ty?.country_code,ty?.region_code,ty?.tax_type,r.account_ref].join("|"); (ranges.get(k)||ranges.set(k,[]).get(k)).push(r);
+  }
+  for(const list of ranges.values()){ list.sort((a,b)=>(toDate(a.active_from)||0)-(toDate(b.active_from)||0)); for(let i=1;i<list.length;i++){ const prevTo=toDate(list[i-1].active_to); if(!prevTo || prevTo>=toDate(list[i].active_from)) add("Error","Registrations",list[i]._row,`Active dates overlap ${list[i-1].registration_id} for the same registration`); } }
+  const uniq=new Map();
+  for(const r of DB.Returns){
+    fk("Returns",r,"registration_id",regs,"Registrations"); fk("Returns",r,"run_id",runs,"Runs");
+    if(r.stage==null) add("Error","Returns",r._row,"No stage");
+    if(r.state==null) add("Error","Returns",r._row,"No state");
+    if((r.state==="On hold"||r.state==="Not required") && !r.reason) add("Error","Returns",r._row,`${r.state} needs a reason`);
+    const reg=regs.get(String(r.registration_id)); const pe=toDate(r.period_end);
+    if(reg && pe){ const af=toDate(reg.active_from), at=toDate(reg.active_to); if((af&&pe<af)||(at&&pe>at)) add("Error","Returns",r._row,`Period end ${iso(pe)} is outside ${reg.registration_id}'s active dates`); }
+    const k=[r.registration_id,iso(toDate(r.period_start)),r.kind].join("|"); if(uniq.has(k)) add("Error","Returns",r._row,`Duplicate return for ${k.replace(/\|/g," · ")}`); else uniq.set(k,1);
+  }
+  for(const row of C.rows) if(row.flag==="Blocked, no issue") add("Error","Returns",row.r._row,`${row.r.return_id} is Blocked with no open issue linked`);
+  for(const o of DB.Ownerships){
+    fk("Ownerships",o,"owner_id",owners,"Owners");
+    const n=["return_id","run_id","issue_id","task_id"].filter(c=>o[c]!=null).length;
+    if(n!==1) add("Error","Ownerships",o._row,`Exactly one of return_id, run_id, issue_id, task_id must be set (found ${n})`);
+    fk("Ownerships",o,"return_id",rets,"Returns"); fk("Ownerships",o,"run_id",runs,"Runs"); fk("Ownerships",o,"issue_id",issues,"Issues"); fk("Ownerships",o,"task_id",tasksIdx,"Tasks");
+  }
+  for(const row of C.rows) if(!row.prep && row.r.state!=="Not required") add("Warning","Returns",row.r._row,`${row.r.return_id} has no preparer`);
+  for(const t of DB.Tasks){
+    fk("Tasks",t,"run_id",runs,"Runs"); fk("Tasks",t,"template_id",tasksIdx,"Tasks"); fk("Tasks",t,"return_id",rets,"Returns"); fk("Tasks",t,"issue_id",issues,"Issues"); fk("Tasks",t,"customer_id",customers,"Customers"); fk("Tasks",t,"notice_id",notices,"BalancesNotices");
+    const n=["return_id","issue_id","customer_id","notice_id"].filter(c=>t[c]!=null).length;
+    if(n>1) add("Error","Tasks",t._row,`A task links to at most one return, issue, customer or notice (found ${n})`);
+    if(t.run_id==null && (t.anchor==null||t.offset==null)) add("Error","Tasks",t._row,"A template (no run) needs an anchor and offset");
+    fk("Tasks",t,"return_type_id",types,"ReturnTypes");
+    if(t.return_type_id!=null && (t.run_id!=null||t.return_id!=null)) add("Error","Tasks",t._row,"A return type checklist row is a template: leave run and return empty");
+    if(t.return_type_id!=null && (t.completes_stage==null||!t.owner_role)) add("Error","Tasks",t._row,"A checklist step needs completes_stage and owner_role");
+    if(t.return_id!=null && t.run_id==null) add("Error","Tasks",t._row,"A return task must carry its run");
+    if(t.return_id!=null && t.kind!=="Return") add("Error","Tasks",t._row,"Only a Return header task carries return_id; steps link to it with Subtask of");
+    if(t.kind==="Return" && t.return_id==null) add("Error","Tasks",t._row,"A Return header task needs its return_id");
+    if(t.kind==="Run" && t.run_id==null) add("Error","Tasks",t._row,"A Run header task needs its run_id");
+    if(t.kind==="Return step" && t.run_id!=null){ const par=C.tasksById.get(C.parentOf.get(String(t.task_id))); if(!par||par.kind!=="Return") add("Error","Tasks",t._row,"A return step must be Subtask of a Return header task"); }
+    if(t.return_filter!=null && t.return_filter!=="" && !parseRF(t.return_filter)) add("Warning","Tasks",t._row,`return_filter "${t.return_filter}" can't be read; use e.g. stage<6; state=Open`);
+    if(t.run_id!=null && t.status==="Template") add("Error","Tasks",t._row,"A task in a run can't have status Template");
+    if(t.run_id!=null && !t.due_date && t.kind!=="Run" && t.kind!=="Return") add("Warning","Tasks",t._row,"Task has no due date");
+    if(t.status==="Done" && !t.done_on) add("Warning","Tasks",t._row,"Done task has no done_on date");
+  }
+  { const seenHead=new Set(), seenRel=new Set(), seenParent=new Set();
+    for(const t of DB.Tasks) if(t.kind==="Return" && t.return_id!=null){ if(seenHead.has(t.return_id)) add("Error","Tasks",t._row,`${t.return_id} has more than one Return header task`); seenHead.add(t.return_id); }
+    for(const r of DB.Returns) if(!seenHead.has(r.return_id)) add("Warning","Returns",r._row,`${r.return_id} has no Return header task`);
+    for(const l of (DB.TaskRelations||[])){ fk("TaskRelations",l,"from_task_id",tasksIdx,"Tasks"); fk("TaskRelations",l,"to_task_id",tasksIdx,"Tasks");
+      if(!REL_TYPES.includes(l.relation_type)) add("Error","TaskRelations",l._row,`relation_type must be one of ${REL_TYPES.join(", ")}`);
+      if(String(l.from_task_id)===String(l.to_task_id)) add("Error","TaskRelations",l._row,"A task can't relate to itself");
+      const k=l.from_task_id+"|"+l.to_task_id+"|"+l.relation_type; if(seenRel.has(k)) add("Warning","TaskRelations",l._row,"Duplicate relation"); seenRel.add(k);
+      if(l.relation_type==="Subtask of"){ if(seenParent.has(String(l.from_task_id))) add("Error","TaskRelations",l._row,`${l.from_task_id} has more than one parent`); seenParent.add(String(l.from_task_id));
+        const a=C.tasksById.get(String(l.from_task_id)), b=C.tasksById.get(String(l.to_task_id)); if(a&&b&&a.run_id!=null&&String(a.run_id)!==String(b.run_id)) add("Error","TaskRelations",l._row,`${l.from_task_id} and its parent are in different runs`); } }
+    for(const [a] of C.parentOf){ let x=a, n=0; while(C.parentOf.has(x) && n<20){ x=C.parentOf.get(x); n++; } if(n>=20) add("Error","TaskRelations",null,`Subtask loop at ${a}`); }
+  }
+  for(const l of DB.IssueLinks){ fk("IssueLinks",l,"issue_id",issues,"Issues"); const n=["return_id","registration_id","customer_id"].filter(c=>l[c]!=null).length; if(n!==1) add("Error","IssueLinks",l._row,`Exactly one target must be set (found ${n})`); fk("IssueLinks",l,"return_id",rets,"Returns"); fk("IssueLinks",l,"registration_id",regs,"Registrations"); fk("IssueLinks",l,"customer_id",customers,"Customers"); }
+  for(const e of DB.ReturnEvents){ fk("ReturnEvents",e,"return_id",rets,"Returns"); fk("ReturnEvents",e,"actor",owners,"Owners"); }
+  for(const b of DB.BalancesNotices){ fk("BalancesNotices",b,"customer_id",customers,"Customers"); fk("BalancesNotices",b,"owner_id",owners,"Owners"); fk("BalancesNotices",b,"issue_id",issues,"Issues"); }
+  for(const [s,sc] of Object.entries(SCHEMA)) for(const [k,t] of sc.cols) if(Array.isArray(t)) for(const r of DB[s]) if(r[k]!=null && !t.includes(r[k])) add(s==="Returns"&&(k==="stage"||k==="state")?"Error":"Warning",s,r._row,`${k} "${r[k]}" is not one of: ${t.join(", ")}`);
+  return out;
+}
+
+/* ---------- views ---------- */
+
+/* ---------- kick off the next run: run row, returns, owners, checklists, run tasks ---------- */
+function idGen(sheet){ const pk=SCHEMA[sheet].pk; let n=0,w=5,pre=sheet==="Tasks"?"TSK-":sheet==="TaskRelations"?"REL-":sheet==="Returns"?"RET-":sheet==="Ownerships"?"":"";
+  for(const r of (DB[sheet]||[])){ const m=/^(.*?)(\d+)$/.exec(String(r[pk]||"")); if(m && +m[2]>=n){ n=+m[2]; pre=m[1]; w=m[2].length; } }
+  return () => pre+String(++n).padStart(w,"0"); }
+// the periods a registration files for in a run whose period month is pm (first day of the month)
+function periodsFor(freq, pm){ const y=pm.getUTCFullYear(), m=pm.getUTCMonth(), end=ymd(y,m+1,0), out=[];
+  if(freq==="Semi-monthly"){ out.push([ymd(y,m,1),ymd(y,m,15)],[ymd(y,m,16),end]); }
+  else if(freq==="Weekly"){ for(let d=ymd(y,m,1); d<=end; d=new Date(+d+DAY)) if(d.getUTCDay()===6) out.push([new Date(+d-6*DAY),d]); }
+  else if(freq==="Quarterly"){ if(m%3===2) out.push([ymd(y,m-2,1),end]); }
+  else if(freq==="Semi-annual"){ if(m%6===5) out.push([ymd(y,m-5,1),end]); }
+  else if(freq==="Annual"){ if(m===11) out.push([ymd(y,0,1),end]); }
+  else out.push([ymd(y,m,1),end]);
+  return out; }
+function nextRunPlan(){ const last=[...DB.Runs].sort((a,b)=>(toDate(b.run_month)||0)-(toDate(a.run_month)||0))[0]; const lm=toDate(last.run_month);
+  const rm=ymd(lm.getUTCFullYear(),lm.getUTCMonth()+1,1), pm=ymd(rm.getUTCFullYear(),rm.getUTCMonth()-1,1), pe=ymd(rm.getUTCFullYear(),rm.getUTCMonth(),0);
+  const run_id=`RUN-${rm.getUTCFullYear()}-${String(rm.getUTCMonth()+1).padStart(2,"0")}`;
+  const have=new Set(DB.Returns.map(r=>[r.registration_id,iso(toDate(r.period_start)),r.kind].join("|")));
+  const todo=[];
+  for(const reg of DB.Registrations){ const ty=C.types.get(String(reg.return_type_id)); if(!ty || ty.active==="No") continue;
+    const af=toDate(reg.active_from), at=toDate(reg.active_to);
+    for(const [ps,pe2] of periodsFor(ty.frequency, pm)){ if((af&&af>pe2)||(at&&at<ps)) continue; if(have.has([reg.registration_id,iso(ps),"Regular"].join("|"))) continue; todo.push({reg,ty,ps,pe:pe2}); } }
+  return {run_id, rm, pm, pe, todo, exists: DB.Runs.some(r=>r.run_id===run_id)}; }
+function kickOff(){
+  const plan=nextRunPlan(); if(plan.exists){ toast(`${plan.run_id} already exists`); return; }
+  const {run_id, rm, pm, pe, todo}=plan; const L=localDate;
+  if(!DB.TaskRelations) DB.TaskRelations=[];
+  const tid=idGen("Tasks"), relid=idGen("TaskRelations"), retid=idGen("Returns");
+  const rel=(a,b,t)=>DB.TaskRelations.push(row({relation_id:relid(),from_task_id:a,to_task_id:b,relation_type:t,notes:null},"TaskRelations"));
+  const own=(who,role,k,v)=>{ if(who) DB.Ownerships.push(row({owner_id:who,role,return_id:null,run_id:null,issue_id:null,task_id:null,[k]:v,from_date:L(C.dates.asOf),to_date:null},"Ownerships")); };
+  const task=o=>{ const t=row({task_id:tid(),title:null,kind:null,return_filter:null,run_id,template_id:null,return_type_id:null,return_id:null,issue_id:null,customer_id:null,notice_id:null,anchor:null,offset:null,completes_stage:null,applies_to_tier:null,owner_role:null,due_date:null,status:"Not started",done_on:null,notes:null,...o},"Tasks"); DB.Tasks.push(t); return t.task_id; };
+  DB.Runs.push(row({run_id, run_month:L(rm), period_start:L(pm), period_end:L(pe), status:"Open", notes:"Kicked off in the app"},"Runs"));
+  const runOwner=C.ownerOf("U:"+C.run.run_id,"Run owner"); own(runOwner,"Run owner","run_id",run_id);
+  const head=task({title:`${rm.toLocaleDateString("en-GB",{month:"short",year:"numeric",timeZone:"UTC"})} filing run`,kind:"Run",status:null,notes:"Header: status and dates follow the Runs row"});
+  // run checklist from the run templates
+  for(const tp of DB.Tasks.filter(t=>t.run_id==null && t.return_type_id==null && t.status==="Template")){
+    const id=task({title:tp.title,kind:tp.kind,return_filter:tp.return_filter??null,template_id:tp.task_id,anchor:tp.anchor,offset:tp.offset,due_date:L(anchorDate(tp.anchor,tp.offset,rm,C.hol))});
+    rel(id,head,"Subtask of"); own(C.ownerOf("T:"+tp.task_id,"Task owner"),"Task owner","task_id",id); }
+  // returns, their owners and their checklists, with rules compiled at each period end
+  const tpl=new Map(); for(const t of DB.Tasks) if(t.return_type_id!=null && t.run_id==null){ const k=String(t.return_type_id); (tpl.get(k)||tpl.set(k,[]).get(k)).push(t); }
+  const CD19=ymd(rm.getUTCFullYear(),rm.getUTCMonth(),+C.S.submit_calendar_day||19);
+  let nSteps=0;
+  for(const {reg,ps,pe:pe2} of todo){ const ty=C.typeAt(reg.return_type_id,pe2), cu=C.customers.get(String(reg.customer_id));
+    const stat=statFromType(ty,rm,pe2), rid=retid(), subDue=stat&&stat<CD19?stat:CD19;
+    DB.Returns.push(row({return_id:rid,registration_id:reg.registration_id,run_id,period_start:L(ps),period_end:L(pe2),kind:"Regular",stage:"1 Not started",state:"Open",calculated:null,collected:null,due:null,statutory_due:stat?L(stat):null,released_on:null,approved_on:null,submitted_on:null,confirmation_no:null,reason:null,notes:null},"Returns"));
+    own(ty.default_preparer,"Preparer","return_id",rid); own(ty.default_reviewer,"Reviewer","return_id",rid); own(cu?.release_owner,"Release owner","return_id",rid); own(cu?.customer_approver,"Customer approver","return_id",rid);
+    const rh=task({title:`${ty.name} · ${pe2.toLocaleDateString("en-GB",{month:"short",year:"numeric",timeZone:"UTC"})}`,kind:"Return",return_id:rid,status:null,notes:"Header: status and dates follow the Returns row"});
+    rel(rh,head,"Subtask of");
+    for(const tp of (tpl.get(String(reg.return_type_id))||[]).slice().sort((a,b)=>(+a.completes_stage||0)-(+b.completes_stage||0))){
+      const due = tp.anchor==="DUE" ? new Date(+subDue + (+tp.offset)*DAY) : anchorDate(tp.anchor,tp.offset,rm,C.hol);
+      const id=task({title:tp.title,kind:"Return step",template_id:tp.task_id,anchor:tp.anchor,offset:tp.offset,completes_stage:tp.completes_stage,applies_to_tier:tp.applies_to_tier,owner_role:tp.owner_role,due_date:L(due)});
+      rel(id,rh,"Subtask of"); nSteps++; } }
+  ui.run=run_id; ui.sel=null; kickArmed=false; dirty(); compute(); route();
+  toast(`Kicked off ${run_id}: ${todo.length} returns, ${nSteps} checklist steps`);
+}
+let kickArmed=false;
+function renderDates(){
+  const d=C.dates;
+  const runOpts=[...DB.Runs].sort((a,b)=>(toDate(b.run_month)||0)-(toDate(a.run_month)||0)).map(r=>`<option value="${esc(r.run_id)}" ${r.run_id===C.run.run_id?"selected":""}>${esc(toDate(r.run_month)?.toLocaleDateString("en-GB",{month:"long",year:"numeric",timeZone:"UTC"})||r.run_id)} run${r.status==="Closed"?" (closed)":r.status==="Open"?" (open)":""}</option>`).join("");
+  document.getElementById("dates").innerHTML = `<label class="runpick"><span class="sr">Run</span><select id="runSel" aria-label="Run">${runOpts}</select></label><span>As of <b>${fmt(d.asOf)}</b></span><span>Release by <b>${fmt(d.BD5)}</b> (BD${+C.S.release_business_day||5})</span><span>Submit by <b>${fmt(d.CD19)}</b></span>${(()=>{ const p=nextRunPlan(); if(p.exists) return ""; const lbl=p.rm.toLocaleDateString("en-GB",{month:"short",year:"numeric",timeZone:"UTC"});
+    return kickArmed ? `<button id="kickGo" class="primary">Create ${p.todo.length} returns for ${lbl}</button><button id="kickNo">Cancel</button>` : `<button id="kickBtn" title="Creates the next run with its returns, owners, checklists and run tasks">Kick off ${lbl} run</button>`; })()}`;
+}
+document.getElementById("dates").addEventListener("click",e=>{ if(e.target.id==="kickBtn"){ kickArmed=true; renderDates(); } else if(e.target.id==="kickNo"){ kickArmed=false; renderDates(); } else if(e.target.id==="kickGo") kickOff(); });
+document.getElementById("dates").addEventListener("change",e=>{ if(e.target.id==="runSel"){ ui.run=e.target.value; ui.sel=null; compute(); route(); toast(`Showing ${ui.run}`); } });
+function route(){
+  if(!DB) return;
+  const v = (location.hash||"#run").slice(1);
+  document.querySelectorAll("#tabs a").forEach(a=>a.setAttribute("aria-current", a.getAttribute("href")==="#"+v ? "page":"false"));
+  const m=document.getElementById("main");
+  m.className = "wrap" + (["returns","customers","owners","issues","data","tasks"].includes(v) ? " fill" : "");
+  ({tasks:viewTasks,run:viewRun,returns:viewReturns,customers:viewCustomers,owners:viewOwners,issues:viewIssues,data:viewData}[v]||viewRun)(m);
+}
+window.addEventListener("hashchange",route);
+function go(view, filters){ Object.assign(ui,{q:"",flag:"",owner:"",role:"",place:"",stage:"",stageLt:"",state:"",kind:"",tier:"",customer:"",issue:"",prepay:"",unowned:"",task:"",sel:null,limit:200},filters||{}); if(location.hash==="#"+view) route(); else location.hash=view; }
+window.go = go;
+
+function viewRun(m){
+  const R=C.rows, live=R.filter(x=>!["On hold","Not required"].includes(x.r.state));
+  const released=live.filter(x=>x.stageN>=6&&x.stageN<=9).length, submitted=live.filter(x=>x.stageN>=8).length;
+  const cnt=f=>R.filter(x=>x.flag===f).length;
+  const blocked=cnt("Blocked")+cnt("Blocked, no issue"), behind=cnt("Behind plan")+cnt("Late release"), risk=cnt("Submit at risk")+cnt("Missed deadline")+cnt("Filed late");
+  const tierA=live.filter(x=>x.tier==="A").length;
+  const d=C.dates;
+  const k=(v,l,cls,on)=>`<a class="kpi ${cls||""}" href="#returns" ${on?`onclick="go('returns',${esc(JSON.stringify(on))});return false"`:""} style="text-decoration:none;color:inherit"><span class="v">${v}</span><span class="l">${l}</span></a>`;
+  // funnel
+  const max=Math.max(...STAGES.map(s=>R.filter(x=>x.r.stage===s&&x.r.state!=="Not required"&&x.r.state!=="On hold").length),1);
+  const funnel=STAGES.map(s=>{ const xs=R.filter(x=>x.r.stage===s && !["Not required","On hold"].includes(x.r.state)); const w=xs.filter(x=>/WARP/.test(x.automation)).length; return `<span>${esc(s)}</span><div class="track"><div class="fill" style="width:${xs.length/max*100}%"></div><div class="fill warp" style="width:${w/max*100}%"></div></div><span class="n">${xs.length}</span>`; }).join("");
+  // timeline
+  const tl=[["BD1",d.BD1],["BD"+(+C.S.release_business_day||5)+" release",d.BD5,1],["CD8 chase",d.CD8],["CD12 approval cut-off",d.CD12],["Target",d.target],["CD19 submit",d.CD19,1]];
+  const t0=+d.rm, t1=+d.CD19+3*DAY, pos=x=>Math.max(0,Math.min(100,(+x-t0)/(t1-t0)*100)).toFixed(2);
+  const timeline=`<div class="timeline"><div class="axis"></div>${tl.map(([l,x,key])=>`<div class="m ${key?"key":""}" style="left:${pos(x)}%"><span class="dot"></span>${esc(l)}<br>${fmtShort(x)}</div>`).join("")}${d.asOf<=new Date(+d.CD19+3*DAY)?`<div class="now" style="left:${pos(d.asOf)}%"><span>Today ${fmtShort(d.asOf)}</span></div>`:""}</div>`;
+  // by owner
+  const people=[...C.owners.values()].filter(o=>o.type!=="External");
+  const byOwner=people.map(o=>{ const mine=R.filter(x=>x.prep===o.owner_id); const open=mine.filter(x=>x.stageN<8 && x.r.state!=="On hold").length; const red=mine.filter(x=>x.attention).length; const rel=R.filter(x=>x.rel===o.owner_id && x.stageN<6 && x.r.state==="Open").length; return {o,n:mine.length,open,red,rel}; }).filter(x=>x.n||x.rel).sort((a,b)=>b.red-a.red);
+  // issues by category
+  const openIss=[...C.issues.values()].filter(C.openIssue);
+  const blockedBy=i=>R.filter(x=>x.links.some(l=>l.issue_id===i.issue_id)).length;
+  const issRows=openIss.map(i=>({i,n:blockedBy(i)})).sort((a,b)=>(a.i.severity||"S9").localeCompare(b.i.severity||"S9")||b.n-a.n).slice(0,8);
+  const errs=C.checks.filter(c=>c.level==="Error").length, warns=C.checks.length-errs;
+  m.innerHTML=`<div class="grid">
+  <div class="grid kpis">
+    ${k(R.length,"Returns in this run")}
+    ${k(pct(released,live.length),`Released (${released} of ${live.length})`, released/live.length>=.9?"ok":"", {stage:""})}
+    ${k(submitted,"Submitted to authority","",{})}
+    ${k(blocked,"Blocked","bad",{flag:"Blocked*"})}
+    ${k(behind,"Behind plan or late release","warn",{flag:"Behind*"})}
+    ${k(risk,"Submit at risk, missed or late",risk?"bad":"",{flag:"Risk*"})}
+    ${k(tierA,"Need second review (tier A)","",{tier:"A"})}
+    <a class="kpi ${C.tasks.filter(x=>x.tflag==="Overdue").length?"bad":""}" href="#tasks" style="text-decoration:none;color:inherit"><span class="v">${C.tasks.filter(x=>x.tflag==="Overdue"||x.tflag==="Due today").length}</span><span class="l">Tasks overdue or due today</span></a>
+  </div>
+  <section class="panel"><h3>Run calendar</h3>${timeline}<p class="note">Every return should be at stage ${d.expStage} or later today. Anything below that is behind plan.</p></section>
+  <div class="grid two">
+    <section class="panel"><h3>Where the returns are</h3><div class="funnel">${funnel}</div><div class="legend"><span><i style="background:var(--accent)"></i>All returns</span><span><i style="background:var(--info)"></i>Of which WARP places</span></div></section>
+    <section class="panel"><h3>Needs attention by preparer</h3><div class="tbl-wrap"><table><thead><tr><th>Owner</th><th class="num">Prepares</th><th class="num">Open</th><th class="num">Red flags</th><th class="num">To release</th></tr></thead><tbody>
+      ${byOwner.map(x=>`<tr><td>${esc(x.o.name)} <span class="muted small">${esc(x.o.owner_id)}</span></td><td class="num">${jump(x.n,{owner:x.o.owner_id,role:"prep"})}</td><td class="num">${x.open}</td><td class="num">${x.red?chip(x.red,"c-bad"):"0"}</td><td class="num">${x.rel}</td></tr>`).join("")}
+    </tbody></table></div></section>
+  </div>
+  <div class="grid two">
+    <section class="panel"><h3>Open issues, most severe first</h3><div class="tbl-wrap"><table><thead><tr><th>Issue</th><th>Sev</th><th>Category</th><th class="num">Returns blocked</th><th>Owner</th></tr></thead><tbody>
+      ${issRows.map(x=>`<tr><td class="mono">${esc(x.i.issue_id)}</td><td>${sevChip(x.i.severity)}</td><td>${esc(x.i.category)}</td><td class="num">${jump(x.n,{issue:x.i.issue_id})}</td><td>${esc(C.ownerOf("I:"+x.i.issue_id,"Issue owner")||"–")}</td></tr>`).join("")}
+    </tbody></table></div></section>
+    <section class="panel"><h3>Data checks</h3><p>${errs?chip(errs+" errors","c-bad"):chip("No errors","c-ok")} ${warns?chip(warns+" warnings","c-warn"):""}</p><p class="note">The workbook can't enforce links between sheets, so the app checks every link each time a workbook loads. Fix errors in Excel and load it again.</p><p><a href="#data" onclick="dv.sheet='Checks'">See every check</a></p></section>
+  </div></div>`;
+}
+const jump = (n,f) => n ? `<a class="jump" href="#returns" title="Show these returns" onclick='go("returns",${esc(JSON.stringify(f)).replace(/'/g,"&#39;")});return false'>${n}</a>` : "0";
+const sevChip = s => s ? chip(s, s==="S1"?"c-bad":s==="S2"?"c-warn":"c-mut") : "";
+
+function filtered(){
+  let xs=C.rows;
+  const q=ui.q.toLowerCase();
+  if(q) xs=xs.filter(x=>[x.r.return_id,x.r.registration_id,x.cu?.name,x.placeCode,x.placeName,x.ty?.tax_type,x.ty?.name,x.r.notes].join(" ").toLowerCase().includes(q));
+  if(ui.flag==="Blocked*") xs=xs.filter(x=>x.flag.startsWith("Blocked"));
+  else if(ui.flag==="Behind*") xs=xs.filter(x=>x.flag==="Behind plan"||x.flag==="Late release");
+  else if(ui.flag==="Risk*") xs=xs.filter(x=>["Submit at risk","Missed deadline","Filed late"].includes(x.flag));
+  else if(ui.flag==="Attention") xs=xs.filter(x=>x.attention);
+  else if(ui.flag) xs=xs.filter(x=>x.flag===ui.flag);
+  if(ui.owner) xs=xs.filter(x=> ui.role ? x[ui.role]===ui.owner : [x.prep,x.rev,x.rel].includes(ui.owner));
+  if(ui.place) xs=xs.filter(x=>x.placeCode===ui.place);
+  if(ui.stage) xs=xs.filter(x=>x.r.stage===ui.stage);
+  if(ui.stageLt) xs=xs.filter(x=>x.stageN<+ui.stageLt);
+  if(ui.prepay) xs=xs.filter(x=>x.ty?.workflow==="Prepayment");
+  if(ui.unowned) xs=xs.filter(x=>!x.prep);
+  if(ui.state) xs=xs.filter(x=>x.r.state===ui.state);
+  if(ui.kind) xs=xs.filter(x=>x.r.kind===ui.kind);
+  if(ui.tier) xs=xs.filter(x=>x.tier===ui.tier);
+  if(ui.customer) xs=xs.filter(x=>x.cu?.customer_id===ui.customer);
+  if(ui.issue) xs=xs.filter(x=>x.links.some(l=>l.issue_id===ui.issue));
+  const key=ui.sort, dir=ui.dir;
+  const val=x=>({flagRank:x.flagRank,id:x.r.return_id,customer:x.cu?.name||"",place:x.placeCode,stage:x.stageN,tier:x.tier,prep:x.prep,due:+x.submitDue,gap:Math.abs(x.gap),kind:x.r.kind}[key]);
+  return xs.slice().sort((a,b)=>{ const A=val(a),B=val(b); return (A>B?1:A<B?-1:0)*dir || (+a.r.return_id.slice(4))-(+b.r.return_id.slice(4)); });
+}
+function opt(list,cur,label){ return `<option value="">${label}</option>`+list.map(([v,t])=>`<option value="${esc(v)}" ${String(v)===String(cur)?"selected":""}>${esc(t)}</option>`).join(""); }
+function viewReturns(m){
+  const xs=filtered();
+  const people=[...C.owners.values()].filter(o=>o.type!=="External").map(o=>[o.owner_id,o.name]);
+  const places=[...new Set(C.rows.map(x=>x.placeCode))].sort().map(p=>[p,p]);
+  const custName=ui.customer?C.customers.get(ui.customer)?.name:"";
+  const th=(k,l,cls)=>`<th class="${cls||""}" onclick="sortBy('${k}')">${l}${ui.sort===k?(ui.dir>0?" ▲":" ▼"):""}</th>`;
+  m.innerHTML=`<div class="layout ${ui.sel?"open":""}"><div class="view" style="min-width:0">
+    <div class="filters">
+      <input type="search" id="fq" placeholder="Search return, customer, place" value="${esc(ui.q)}">
+      <select id="fflag">${opt([["Attention","Needs attention"],["Blocked*","Blocked"],["Behind*","Behind plan or late release"],["Risk*","Submit at risk, missed, late"],...Object.keys(FLAGS).map(f=>[f,f])],ui.flag,"All flags")}</select>
+      <select id="fowner" title="${ui.role?"Preparer only":"Preparer, reviewer or release owner"}">${opt(people,ui.owner,"Any owner")}</select>
+      <select id="fplace">${opt(places,ui.place,"Any place")}</select>
+      <select id="fstage">${opt(STAGES.map(s=>[s,s]),ui.stage,"Any stage")}</select>
+      <select id="fstate">${opt(STATES.map(s=>[s,s]),ui.state,"Any state")}</select>
+      <select id="fkind">${opt([["Regular","Regular"],["Historical","Historical"],["Amendment","Amendment"],["Prepayment","Prepayment"]],ui.kind,"Any kind")}</select>
+      <select id="ftier">${opt([["A","Tier A, second review"],["B","Tier B, preparer only"]],ui.tier,"Any tier")}</select>
+      ${custName?`<button onclick="ui.customer='';route()">${esc(custName)} ✕</button>`:""}
+      ${ui.issue?`<button onclick="ui.issue='';route()">Issue ${esc(ui.issue)} ✕</button>`:""}
+      ${ui.role&&ui.owner?`<button onclick="ui.role='';route()">${esc(ui.owner)} as preparer ✕</button>`:""}
+      ${ui.task?`<button onclick="Object.assign(ui,{task:'',stageLt:'',prepay:'',unowned:'',stage:'',state:'',flag:'',tier:'',issue:'',customer:'',q:'',sel:null});route()" title="Clear the task's filter">Task: ${esc((C.tasksById.get(String(ui.task))?.title||ui.task).slice(0,40))} ✕</button>`:""}
+      ${!ui.task&&ui.stageLt?`<button onclick="ui.stageLt='';route()">Before ${esc(STAGES[+ui.stageLt-1]||ui.stageLt)} ✕</button>`:""}
+      ${!ui.task&&ui.prepay?`<button onclick="ui.prepay='';route()">Prepayment ✕</button>`:""}
+      ${!ui.task&&ui.unowned?`<button onclick="ui.unowned='';route()">No preparer ✕</button>`:""}
+      <span class="muted small">${xs.length} returns</span>
+    </div>
+    <div class="tbl-wrap"><table><thead><tr>${th("id","Return")}${th("customer","Customer")}${th("place","Place")}<th>Tax</th>${th("kind","Kind")}${th("stage","Stage")}<th>State</th>${th("flagRank","Flag")}${th("tier","Tier")}${th("prep","Preparer")}<th>Reviewer</th><th>Release</th>${th("due","Submit due")}${th("gap","Gap","num")}</tr></thead><tbody>
+    ${xs.slice(0,ui.limit).map(x=>`<tr tabindex="0" data-id="${esc(x.r.return_id)}" class="${ui.sel===x.r.return_id?"sel":""}"><td class="mono">${esc(x.r.return_id)}</td><td>${esc(x.cu?.name||"?")}</td><td>${esc(x.placeCode)}</td><td>${esc(x.ty?.tax_type||"")}</td><td>${esc(x.r.kind)}${x.r.kind!=="Regular"?` <span class="muted small">${esc(fmtShort(toDate(x.r.period_start)).split(" ")[1]||"")}</span>`:""}</td><td>${esc(x.r.stage)} <span class="muted small">${x.steps.length?x.stepsDone+"/"+x.steps.length:""}</span></td><td class="${x.r.state==="Open"?"muted":""}">${esc(x.r.state)}</td><td>${chip(x.flag)}</td><td>${x.tier==="A"?chip("A","c-info"):'<span class="muted">B</span>'}</td><td>${esc(x.prep)}</td><td>${esc(x.rev)}</td><td>${esc(x.rel)}</td><td>${fmtShort(x.submitDue)}</td><td class="num">${money(x.gap)}</td></tr>`).join("")}
+    </tbody></table></div>
+    ${xs.length>ui.limit?`<div class="more"><button onclick="ui.limit+=300;route()">Show ${Math.min(300,xs.length-ui.limit)} more of ${xs.length-ui.limit}</button></div>`:""}
+  </div>${ui.sel?drawer(ui.sel):""}</div>`;
+  const bind=(id,k)=>document.getElementById(id).addEventListener(id==="fq"?"input":"change",e=>{ ui[k]=e.target.value; if(id==="fowner") ui.role=""; ui.limit=1500; if(id==="fq"){ clearTimeout(bind.t); bind.t=setTimeout(()=>{route(); const el=document.getElementById("fq"); el.focus(); el.setSelectionRange(el.value.length,el.value.length);},200);} else route(); });
+  [["fq","q"],["fflag","flag"],["fowner","owner"],["fplace","place"],["fstage","stage"],["fstate","state"],["fkind","kind"],["ftier","tier"]].forEach(a=>bind(...a));
+  m.querySelectorAll("tbody tr[data-id]").forEach(tr=>{ const open=()=>{ ui.sel = ui.sel===tr.dataset.id?null:tr.dataset.id; route(); }; tr.addEventListener("click",open); tr.addEventListener("keydown",e=>{ if(e.key==="Enter") open(); }); });
+  if(ui.sel) bindDrawer();
+}
+window.sortBy = k => { if(ui.sort===k) ui.dir*=-1; else { ui.sort=k; ui.dir=1; } route(); };
+
+function drawer(id){
+  const x=C.rows.find(r=>r.r.return_id===id); if(!x) return "";
+  const r=x.r, people=[...C.owners.values()].filter(o=>o.type!=="External"&&o.active!=="No");
+  const issues=[...C.issues.values()].filter(C.openIssue);
+  return `<aside class="drawer" aria-label="Return detail">
+    <div style="display:flex;justify-content:space-between;gap:8px;align-items:start"><div><h2>${esc(r.return_id)} · ${esc(x.cu?.name||"")}</h2><div class="muted small">${esc(x.placeName)} (${esc(x.placeCode)}) · ${esc(x.ty?.tax_type||"")} · ${esc(x.ty?.frequency||"")} · <span class="mono">${esc(x.ty?.return_type_id||"")}</span></div></div><button onclick="ui.sel=null;route()" aria-label="Close">✕</button></div>
+    <div>${chip(x.flag)} ${x.tier==="A"?chip("Tier A: second review","c-info"):chip("Tier B: preparer only","c-mut")}</div>
+    ${x.reasons.length?`<ul class="reasons">${x.reasons.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>`:""}
+    <dl class="kv">
+      <dt>Period</dt><dd>${iso(toDate(r.period_start))} to ${iso(toDate(r.period_end))} · ${esc(r.kind)}</dd>
+      <dt>Registration</dt><dd class="mono">${esc(r.registration_id)} <span class="muted">${esc(x.reg?.account_ref||"")}</span></dd>
+      <dt>Automation</dt><dd>${esc(x.automation||"Manual")}</dd>
+      <dt>Release due</dt><dd>${fmt(C.dates.BD5)}</dd>
+      <dt>Submit due</dt><dd>${fmt(x.submitDue)}${x.stat?` <span class="muted small">(authority ${fmtShort(x.stat)})</span>`:` <span class="muted small">(authority date not set)</span>`}</dd>
+      <dt>Calculated</dt><dd class="mono">${money(r.calculated)}</dd><dt>Collected</dt><dd class="mono">${money(r.collected)} <span class="${Math.abs(x.gap)>0.01?"":"muted"}">(gap ${money(x.gap)})</span></dd>
+      <dt>Released</dt><dd>${iso(toDate(r.released_on))||"–"}</dd><dt>Approved</dt><dd>${iso(toDate(r.approved_on))||"–"}</dd><dt>Submitted</dt><dd>${iso(toDate(r.submitted_on))||"–"} ${esc(r.confirmation_no||"")}</dd>
+      <dt>Approver</dt><dd>${esc(C.owners.get(x.appr)?.name||x.appr||"–")}</dd>
+      ${r.reason?`<dt>Reason</dt><dd>${esc(r.reason)}</dd>`:""}${r.notes?`<dt>Notes</dt><dd>${esc(r.notes)}</dd>`:""}${x.reg?.notes?`<dt>Registration</dt><dd>${esc(x.reg.notes)}</dd>`:""}
+      ${x.links.length?`<dt>Issues</dt><dd>${x.links.map(l=>{const i=C.issues.get(l.issue_id); return `<b class="mono">${esc(l.issue_id)}</b> ${esc(i?.description||"")}`;}).join("<br>")}</dd>`:""}
+    </dl>
+    <h3>Checklist ${x.steps.length?`<span class="muted">${x.stepsDone} of ${x.steps.length} done</span>`:""}</h3>
+    ${x.steps.length?`<ul class="steps">${x.steps.map(t=>{ const d=toDate(t.due_date), done=t.status==="Done"||t.status==="Skipped", late=!done&&d&&d<C.dates.asOf; return `<li class="${done?"done":""}"><label><input type="checkbox" class="stepbox" data-id="${esc(t.task_id)}" ${done?"checked":""} ${t.status==="Skipped"?"disabled":""}> <span>${esc(t.title)}</span></label><span class="small ${late?"late":"muted"}">${fmtShort(d)} · ${esc(C.taskOwner(t)||"–")} · stage ${esc(t.completes_stage??"")}</span></li>`; }).join("")}</ul>`:`<p class="muted small">No checklist. Its return type has no steps, or the return was created by hand.</p>`}
+    <h3>Move it</h3>
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:8px">
+      <label class="small">Stage<br><select id="dStage">${STAGES.map(s=>`<option ${s===r.stage?"selected":""}>${s}</option>`).join("")}</select></label>
+      <label class="small">State<br><select id="dState">${STATES.map(s=>`<option ${s===r.state?"selected":""}>${s}</option>`).join("")}</select></label>
+      <label class="small" style="grid-column:1/-1">Link to issue (needed to block)<br><select id="dIssue"><option value="">None</option>${issues.map(i=>`<option value="${esc(i.issue_id)}">${esc(i.issue_id)} · ${esc((i.description||"").slice(0,50))}</option>`).join("")}</select></label>
+      <label class="small" style="grid-column:1/-1">Note or reason<br><input id="dNote" style="width:100%" value=""></label>
+    </div>
+    <button class="primary" id="dApply">Record change</button>
+    <h3>Owners</h3>
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:8px">
+      ${["Preparer","Reviewer","Release owner"].map((role,i)=>`<label class="small">${role}<br><select id="dOwn${i}" data-role="${role}">${people.map(o=>`<option value="${esc(o.owner_id)}" ${o.owner_id===[x.prep,x.rev,x.rel][i]?"selected":""}>${esc(o.owner_id)} · ${esc(o.name)}</option>`).join("")}</select></label>`).join("")}
+    </div>
+    <h3>History</h3>
+    ${x.events.length?x.events.slice().reverse().map(e=>`<div class="ev"><span class="muted">${esc(String(e.at).replace("T"," ").slice(0,16))}</span> ${esc(e.actor)}: ${esc(e.from_stage)} → ${esc(e.to_stage)}${e.to_state!==e.from_state?` (${esc(e.to_state)})`:""}${e.note?` · ${esc(e.note)}`:""}</div>`).join(""):`<p class="muted small">No events recorded yet.</p>`}
+  </aside>`;
+}
+function stageFromSteps(steps){ let st=0; const by=new Map(); for(const t of steps){ const k=+t.completes_stage; if(!k) continue; (by.get(k)||by.set(k,[]).get(k)).push(t); }
+  for(const k of [...by.keys()].sort((a,b)=>a-b)){ if(by.get(k).every(t=>t.status==="Done"||t.status==="Skipped")) st=k; else break; } return Math.max(1,st); }
+function bindDrawer(){
+  const x=C.rows.find(r=>r.r.return_id===ui.sel); if(!x) return;
+  document.querySelectorAll(".stepbox").forEach(cb=>cb.addEventListener("change",()=>{
+    const t=DB.Tasks.find(y=>y.task_id===cb.dataset.id); t.status=cb.checked?"Done":"Not started"; t.done_on=cb.checked?localDate(C.dates.asOf):null;
+    const r=x.r, ns=STAGES[stageFromSteps(x.steps)-1];
+    if(ns!==r.stage){ DB.ReturnEvents.push(row({event_id:nextId("ReturnEvents")||"EV-1",return_id:r.return_id,at:new Date().toISOString().slice(0,16).replace("T"," "),from_stage:r.stage,to_stage:ns,from_state:r.state,to_state:r.state,actor:C.taskOwner(t)||x.prep||"RB",source:"Person",note:`Checklist: ${t.title}`},"ReturnEvents"));
+      const sn=parseInt(ns,10), today=localDate(C.dates.asOf); if(sn>=6&&!r.released_on) r.released_on=today; if(sn>=7&&!r.approved_on) r.approved_on=today; if(sn>=8&&!r.submitted_on) r.submitted_on=today; r.stage=ns; if(sn===9&&r.state==="Open") r.state="Done"; }
+    dirty(); compute(); route(); toast(ns!==x.r.stage?`${t.title}: done. ${x.r.return_id} is now at ${ns}`:`${t.title}: ${t.status.toLowerCase()}`);
+  }));
+  document.getElementById("dApply").addEventListener("click",()=>{
+    const r=x.r, st=document.getElementById("dStage").value, sa=document.getElementById("dState").value, iss=document.getElementById("dIssue").value, note=document.getElementById("dNote").value.trim();
+    if(sa==="Blocked" && !iss && !x.links.length) return toast("Pick the issue that blocks this return first.");
+    if((sa==="On hold"||sa==="Not required") && !note && !r.reason) return toast(`${sa} needs a reason in the note.`);
+    if(iss && !DB.IssueLinks.some(l=>l.issue_id===iss&&l.return_id===r.return_id)) DB.IssueLinks.push(row({issue_id:iss,return_id:r.return_id,registration_id:null,customer_id:null},"IssueLinks"));
+    const actor = x.prep || "RB";
+    DB.ReturnEvents.push(row({event_id:nextId("ReturnEvents")||"EV-1",return_id:r.return_id,at:new Date().toISOString().slice(0,16).replace("T"," "),from_stage:r.stage,to_stage:st,from_state:r.state,to_state:sa,actor,source:"Person",note:note||null},"ReturnEvents"));
+    const today=localDate(C.dates.asOf);
+    const sn=parseInt(st,10);
+    if(sn>=6 && !r.released_on) r.released_on=today;
+    if(sn>=7 && !r.approved_on) r.approved_on=today;
+    if(sn>=8 && !r.submitted_on) r.submitted_on=today;
+    r.stage=st; r.state= sn===9 && sa==="Open" ? "Done" : sa; if(note && (sa==="On hold"||sa==="Not required")) r.reason=note; else if(note) r.notes=note;
+    dirty(); compute(); route(); toast(`${r.return_id} moved to ${r.stage}, ${r.state}`);
+  });
+  document.querySelectorAll("[id^=dOwn]").forEach(sel=>sel.addEventListener("change",()=>{
+    const role=sel.dataset.role, rid=x.r.return_id, asOf=C.dates.asOf;
+    const cur=C.own.get("R:"+rid)?.[role]; if(cur) cur.to_date=localDate(new Date(+asOf-DAY));
+    DB.Ownerships.push(row({owner_id:sel.value,role,return_id:rid,run_id:null,issue_id:null,from_date:localDate(asOf),to_date:null},"Ownerships"));
+    dirty(); compute(); route(); toast(`${role} for ${rid} is now ${sel.value}`);
+  }));
+}
+function row(o,sheet){ Object.defineProperty(o,"_row",{value:DB[sheet].length+2,enumerable:false,writable:true}); return o; }
+let changes=0; function dirty(){ changes++; document.getElementById("saveBtn").textContent=`Save (${changes})`; }
+
+function viewCustomers(m){
+  const by=new Map(); for(const x of C.rows){ const id=x.cu?.customer_id||"?"; (by.get(id)||by.set(id,[]).get(id)).push(x); }
+  const list=[...C.customers.values()].map(c=>{ const xs=by.get(c.customer_id)||[]; const live=xs.filter(x=>!["On hold","Not required"].includes(x.r.state)); const rel=live.filter(x=>x.stageN>=6).length; const bl=xs.filter(x=>x.flag.startsWith("Blocked")).length; const red=xs.filter(x=>x.attention).length;
+    const view = !xs.length?"No returns": c.status!=="Active"?c.status: bl?"Blocked: tell customer": live.length&&live.every(x=>x.stageN>=8)?"All submitted": live.length&&rel===live.length?"All released":"In progress";
+    return {c,n:xs.length,live:live.length,rel,bl,red,view}; }).sort((a,b)=>b.red-a.red||b.n-a.n);
+  const vc=v=>v.startsWith("Blocked")?"c-bad":v.startsWith("All")?"c-ok":v==="In progress"?"c-warn":"c-mut";
+  m.innerHTML=`<div class="view"><h2>Customers</h2><p class="note">What each customer would see: how many of their returns are released, and whether anything is blocked that they need to hear about.</p>
+  <div class="tbl-wrap"><table><thead><tr><th>Customer</th><th>Status</th><th>Tier</th><th>Release owner</th><th class="num">Returns</th><th class="num">Released</th><th class="num">Red flags</th><th>Customer view</th><th>Historicals</th></tr></thead><tbody>
+  ${list.map(x=>`<tr><td>${esc(x.c.name)} <span class="muted small mono">${esc(x.c.customer_id)}</span></td><td>${x.c.status==="Active"?'<span class="muted">Active</span>':chip(x.c.status,"c-warn")}</td><td>${esc(x.c.tier)}</td><td>${esc(C.owners.get(x.c.release_owner)?.name||x.c.release_owner||"–")}</td><td class="num">${jump(x.n,{customer:x.c.customer_id})}</td><td class="num">${x.live?pct(x.rel,x.live):"–"}</td><td class="num">${x.red?chip(x.red,"c-bad"):"0"}</td><td>${chip(x.view,vc(x.view))}</td><td class="small">${esc(x.c.historical_scope||"")}</td></tr>`).join("")}
+  </tbody></table></div></div>`;
+}
+function viewOwners(m){
+  const R=C.rows;
+  const list=[...C.owners.values()].filter(o=>o.type!=="External").map(o=>{
+    const p=R.filter(x=>x.prep===o.owner_id), rv=R.filter(x=>x.rev===o.owner_id&&x.tier==="A"&&x.stageN<6&&x.r.state==="Open"), rvAll=R.filter(x=>x.rev===o.owner_id), rl=R.filter(x=>x.rel===o.owner_id&&x.stageN<6&&x.r.state==="Open");
+    return {o,p:p.length,open:p.filter(x=>x.stageN<8&&x.r.state!=="On hold").length,red:p.filter(x=>x.attention).length,rvAll:rvAll.length,rv:rv.length,rl:rl.length,cap:+o.capacity_per_run||0,iss:[...C.issues.values()].filter(i=>C.openIssue(i)&&C.ownerOf("I:"+i.issue_id,"Issue owner")===o.owner_id).length};
+  });
+  m.innerHTML=`<div class="view"><h2>Owners and workload</h2><p class="note">Review load counts only tier A returns. The reviewer column shows every return a person is named on, so you can see what risk-based review takes off them.</p>
+  <div class="tbl-wrap"><table><thead><tr><th>Owner</th><th>Type</th><th>Team</th><th class="num">Prepares</th><th class="num">Open</th><th class="num">Red flags</th><th class="num">Load vs capacity</th><th class="num">Named reviewer</th><th class="num">Tier A to review</th><th class="num">To release</th><th class="num">Open issues</th></tr></thead><tbody>
+  ${list.map(x=>`<tr><td>${esc(x.o.name)} <span class="muted small">${esc(x.o.owner_id)}</span></td><td>${chip(x.o.type,x.o.type==="Bot"?"c-info":"c-mut")}</td><td>${esc(x.o.team_or_company)}</td><td class="num">${jump(x.p,{owner:x.o.owner_id,role:"prep"})}</td><td class="num">${x.open}</td><td class="num">${x.red?chip(x.red,"c-bad"):"0"}</td><td class="num">${x.cap?chip(pct(x.p+x.rv,x.cap),(x.p+x.rv)/x.cap>1?"c-bad":(x.p+x.rv)/x.cap>.85?"c-warn":"c-ok"):"–"}</td><td class="num">${x.rvAll}</td><td class="num">${x.rv}</td><td class="num">${x.rl}</td><td class="num">${x.iss}</td></tr>`).join("")}
+  </tbody></table></div></div>`;
+}
+const tv={show:"open",owner:"",scope:"run",q:""};
+// "stage<6; state=Open" → {stageLt:"6", state:"Open"}; null when it can't be read
+const RF_KEYS=["flag","owner","place","stage","state","kind","tier","customer","issue","prepay","unowned"];
+function parseRF(txt){ const o={}; for(const part of String(txt||"").split(";").map(x=>x.trim()).filter(Boolean)){
+  const m=/^(\w+)\s*(=|<)\s*(.+)$/.exec(part); if(!m||!RF_KEYS.includes(m[1])||(m[2]==="<"&&m[1]!=="stage")) return null; o[m[2]==="<"?"stageLt":m[1]]=m[3].trim(); } return o; }
+// where clicking a task goes: its return, its issue's returns, its customer's returns, or the run task's filter
+function taskTarget(x){ const t=x.t;
+  if(x.rid) return {f:{sel:x.rid,q:x.rid,task:t.task_id}, label:`Return ${x.rid}`};
+  if(t.issue_id) return {f:{issue:t.issue_id,task:t.task_id}, label:`Issue ${t.issue_id}`};
+  if(t.customer_id) return {f:{customer:t.customer_id,task:t.task_id}, label:C.customers.get(t.customer_id)?.name||t.customer_id};
+  const rf=parseRF(t.return_filter); if(rf && Object.keys(rf).length) return {f:{...rf,task:t.task_id}, label:t.return_filter};
+  return null; }
+function countFor(f){ const keep={...ui}; Object.assign(ui,{q:"",flag:"",owner:"",role:"",place:"",stage:"",stageLt:"",state:"",kind:"",tier:"",customer:"",issue:"",prepay:"",unowned:""},f); const n=filtered().length; Object.assign(ui,keep); return n; }
+function openTask(id){ const x=C.tasks.find(y=>y.t.task_id===id); const tg=x&&taskTarget(x); if(tg) go("returns",tg.f); }
+window.openTask=openTask;
+function viewTasks(m){
+  const runT=C.tasks.filter(x=>x.t.kind!=="Return step"), stepT=C.tasks.filter(x=>x.t.kind==="Return step");
+  const T = tv.scope==="steps" ? stepT : runT;
+  const templates=DB.Tasks.filter(t=>t.run_id==null && t.return_type_id==null);
+  const have=new Set(runT.map(x=>x.t.template_id).filter(Boolean)); const missing=templates.filter(t=>!have.has(t.task_id));
+  let xs=T; if(tv.show==="open") xs=xs.filter(x=>!["Done","Skipped"].includes(x.t.status)); if(tv.owner) xs=xs.filter(x=>x.owner===tv.owner);
+  if(tv.q){ const q=tv.q.toLowerCase(); xs=xs.filter(x=>[x.t.task_id,x.t.title,x.rid,x.ret?.cu?.name,x.ret?.placeCode].join(" ").toLowerCase().includes(q)); }
+  xs=xs.slice().sort((a,b)=>a.rank-b.rank||(a.due||0)-(b.due||0));
+  const LIM=300, shown=xs.slice(0,LIM);
+  const forCell=x=>{ const tg=taskTarget(x); const t=x.t;
+    const txt = x.rid ? `${esc(x.rid)} <span class="muted small">${esc(x.ret?.cu?.name||"")} ${esc(x.ret?.placeCode||"")}</span>` : t.issue_id ? `Issue ${esc(t.issue_id)}` : t.customer_id ? esc(C.customers.get(t.customer_id)?.name||t.customer_id) : t.notice_id ? `Notice ${esc(t.notice_id)}` : tg ? `${countFor(tg.f)} returns <span class="muted small">${esc(t.return_filter)}</span>` : '<span class="muted">Run</span>';
+    return tg ? `<a class="jump" href="#returns" onclick="openTask('${esc(t.task_id)}');return false" title="Open these returns">${txt}</a>` : txt; };
+  const title=x=>{ const tg=taskTarget(x); return tg ? `<a class="tlink" href="#returns" onclick="openTask('${esc(x.t.task_id)}');return false" title="Open in Returns">${esc(x.t.title)}</a>` : esc(x.t.title); };
+  const people=[...C.owners.values()].filter(o=>o.type!=="External").map(o=>[o.owner_id,o.name]);
+  const cnt=f=>T.filter(x=>x.tflag===f).length;
+  const anc=t=>t.anchor?`${t.anchor}${+t.offset>0?"+"+t.offset:t.offset}`:"";
+  const sub=(k,l,n)=>`<button class="subtab" role="tab" aria-selected="${(tv.scope||"run")===k}" onclick="tv.scope='${k}';route()">${l} <span class="muted small">${n}</span></button>`;
+  m.innerHTML=`<div class="view"><div class="subtabs" role="tablist">${sub("run","Run tasks",runT.filter(x=>!["Done","Skipped"].includes(x.t.status)).length+" open")}${sub("steps","Return steps",stepT.filter(x=>!["Done","Skipped"].includes(x.t.status)).length+" open")}</div>
+  <div class="filters">
+    <input type="search" id="tq" placeholder="Search task, return, customer" value="${esc(tv.q||"")}">
+    <select id="tshow"><option value="open" ${tv.show==="open"?"selected":""}>Open tasks</option><option value="all" ${tv.show==="all"?"selected":""}>All tasks</option></select>
+    <select id="towner">${opt(people,tv.owner,"Any owner")}</select>
+    ${chip(cnt("Overdue")+" overdue","c-bad")} ${chip(cnt("Due today")+" due today","c-warn")}
+    <span class="muted small">${xs.length>LIM?`First ${LIM} of ${xs.length}`:xs.length} · ${T.length} in ${esc(C.run.run_id)}</span>
+    ${tv.scope==="steps"?"":`<button id="genTasks" ${missing.length?"":"disabled"} title="Copies each template into this run with its due date">${missing.length?`Create ${missing.length} tasks from templates`:"All template tasks created"}</button>
+    <button id="newTask">Add task</button>`}
+  </div>
+  <div class="tbl-wrap"><table><thead><tr><th>Due</th><th>When</th><th>Task</th><th>Kind</th><th>Returns</th><th>Owner</th><th>Status</th><th>Notes</th></tr></thead><tbody>
+  ${shown.map(x=>`<tr><td>${fmtShort(x.due)} <span class="muted small">${esc(anc(x.t))}</span></td><td>${chip(x.tflag,TFLAGS[x.tflag].c)}</td><td class="wrapcell">${title(x)}${x.blockedBy.length?` ${chip("Blocked by "+x.blockedBy.map(b=>b.issue_id||b.task_id).join(", "),"c-bad")}`:""}</td><td>${esc(x.t.kind)}</td><td>${forCell(x)}</td><td>${esc(C.owners.get(x.owner)?.name||x.owner||"–")}</td>
+    <td><select class="tstatus" data-id="${esc(x.t.task_id)}" aria-label="Status for ${esc(x.t.task_id)}">${["Not started","In progress","Done","Skipped"].map(s=>`<option ${s===x.t.status?"selected":""}>${s}</option>`).join("")}</select></td><td class="wrapcell small">${esc(x.t.notes||"")}</td></tr>`).join("")}
+  </tbody></table></div></div>`;
+  document.getElementById("tq").addEventListener("change",e=>{tv.q=e.target.value; route();});
+  document.getElementById("tshow").addEventListener("change",e=>{tv.show=e.target.value; route();});
+  document.getElementById("towner").addEventListener("change",e=>{tv.owner=e.target.value; route();});
+  m.querySelectorAll(".tstatus").forEach(sel=>sel.addEventListener("change",()=>{ const t=DB.Tasks.find(x=>x.task_id===sel.dataset.id); t.status=sel.value; t.done_on = sel.value==="Done" ? localDate(C.dates.asOf) : null; dirty(); compute(); route(); toast(`${t.task_id} is now ${t.status}`); }));
+  if(tv.scope==="steps") return;
+  document.getElementById("genTasks").addEventListener("click",()=>{
+    const n=missing.length, head=runHead();
+    for(const tp of missing){ const id=nextId("Tasks"); const due=anchorDate(tp.anchor,tp.offset,C.dates.rm,C.hol);
+      DB.Tasks.push(row({task_id:id,title:tp.title,kind:tp.kind,return_filter:tp.return_filter??null,run_id:C.run.run_id,template_id:tp.task_id,return_id:null,issue_id:null,customer_id:null,notice_id:null,anchor:tp.anchor,offset:tp.offset,due_date:localDate(due),status:"Not started",done_on:null,notes:null},"Tasks"));
+      relate(id,head,"Subtask of");
+      const who=C.ownerOf("T:"+tp.task_id,"Task owner"); if(who) DB.Ownerships.push(row({owner_id:who,role:"Task owner",return_id:null,run_id:null,issue_id:null,task_id:id,from_date:localDate(C.dates.rm),to_date:null},"Ownerships")); }
+    dirty(); compute(); route(); toast(`Created ${n} tasks for ${C.run.run_id}`);
+  });
+  document.getElementById("newTask").addEventListener("click",()=>{ const id=nextId("Tasks"); DB.Tasks.push(row({task_id:id,title:"New task",kind:"Other",return_filter:null,run_id:C.run.run_id,template_id:null,return_id:null,issue_id:null,customer_id:null,notice_id:null,anchor:null,offset:null,due_date:localDate(C.dates.asOf),status:"Not started",done_on:null,notes:null},"Tasks")); relate(id,runHead(),"Subtask of"); dirty(); compute(); dv.sheet="Tasks"; dv.q=id; dv.only=false; location.hash="data"; toast(`Added ${id}. Set its title, link and owner here.`); });
+}
+// the run's header task, created if this run doesn't have one yet
+function runHead(){ const h=C.headOfRun.get(String(C.run.run_id)); if(h) return h.task_id; const id=nextId("Tasks");
+  DB.Tasks.push(row({task_id:id,title:`${C.run.run_id} filing run`,kind:"Run",return_filter:null,run_id:C.run.run_id,template_id:null,return_id:null,issue_id:null,customer_id:null,notice_id:null,anchor:null,offset:null,due_date:null,status:null,done_on:null,notes:"Header: status and dates follow the Runs row"},"Tasks"));
+  C.headOfRun.set(String(C.run.run_id),{task_id:id}); return id; }
+function relate(a,b,type){ if(!DB.TaskRelations) DB.TaskRelations=[]; DB.TaskRelations.push(row({relation_id:nextId("TaskRelations")||"REL-000001",from_task_id:a,to_task_id:b,relation_type:type,notes:null},"TaskRelations")); }
+function viewIssues(m){
+  const R=C.rows, tab=ui.issTab||"issues";
+  const list=[...C.issues.values()].map(i=>({i,n:R.filter(x=>x.links.some(l=>l.issue_id===i.issue_id)).length,own:C.ownerOf("I:"+i.issue_id,"Issue owner"),wait:C.ownerOf("I:"+i.issue_id,"Waiting on"),open:C.openIssue(i)})).sort((a,b)=>(b.open-a.open)||(a.i.severity||"S9").localeCompare(b.i.severity||"S9")||b.n-a.n);
+  const bn=DB.BalancesNotices;
+  const sub=(k,l,n)=>`<button class="subtab" role="tab" aria-selected="${tab===k}" onclick="ui.issTab='${k}';route()">${l} <span class="muted small">${n}</span></button>`;
+  const issuesTbl=`<div class="tbl-wrap"><table><thead><tr><th>Issue</th><th>Sev</th><th>Status</th><th>Category</th><th>Description</th><th class="num">Returns blocked</th><th>Owner</th><th>Waiting on</th><th>Systemic</th><th>Link</th></tr></thead><tbody>
+  ${list.map(x=>`<tr><td class="mono">${esc(x.i.issue_id)}</td><td>${sevChip(x.i.severity)}</td><td>${x.open?esc(x.i.status):chip(x.i.status,"c-ok")}</td><td>${esc(x.i.category)}</td><td class="wrapcell">${esc(x.i.description)}</td><td class="num">${jump(x.n,{issue:x.i.issue_id})}</td><td>${esc(x.own||"–")}</td><td>${esc(C.owners.get(x.wait)?.name||x.wait||"")}</td><td>${x.i.systemic_fix==="Yes"?chip("Yes","c-info"):""}</td><td class="mono small">${esc(x.i.source_ref||"")}</td></tr>`).join("")}
+  </tbody></table></div>`;
+  const bnTbl=`<p class="note">Letters and balances from authorities. They feed the pre-run checklist instead of sitting in the issue list.</p><div class="tbl-wrap"><table><thead><tr><th>Notice</th><th>Customer</th><th>Place</th><th>Kind</th><th>Detail</th><th>Received</th><th>Respond by</th><th>Status</th><th>Owner</th></tr></thead><tbody>
+  ${bn.map(b=>`<tr><td class="mono">${esc(b.notice_id)}</td><td>${esc(C.customers.get(b.customer_id)?.name||b.customer_id)}</td><td>${esc(b.place)}</td><td>${esc(b.kind)}</td><td class="wrapcell">${esc(b.period)}</td><td>${iso(toDate(b.received_on))}</td><td>${iso(toDate(b.respond_by))}</td><td>${esc(b.status)}</td><td>${esc(b.owner_id)}</td></tr>`).join("")}
+  </tbody></table></div>`;
+  m.innerHTML=`<div class="view"><div class="subtabs" role="tablist">${sub("issues","Issues",list.filter(x=>x.open).length+" open")}${sub("notices","Balances and notices",bn.length)}</div>${tab==="issues"?issuesTbl:bnTbl}</div>`;
+}
+/* ---------- schema: what each sheet holds, its key and its links ---------- */
+const RULE_FIELDS=["due_rule","due_value","roll_forward","automation","default_preparer","default_reviewer"], DUE_RULES=["Day of next month","Days after period end"];
+const REL_TYPES=["Subtask of","Blocks","Duplicates","Relates to"];
+const YN=["Yes","No"], YNU=["Yes","No","Unknown"], AUTO=["Manual","WARP partial","WARP end to end"];
+const ROLES=["Preparer","Reviewer","Release owner","Customer approver","Run owner","Escalation","Issue owner","Waiting on","Task owner"];
+const FILING=[["due_day","num"],["roll_forward","text"],["automation",AUTO],["prepayment_supported",YNU],["accelerated_supported",YNU],["default_preparer","fk:Owners"],["default_reviewer","fk:Owners"],["notes","text"]];
+const SCHEMA={
+  Settings:{pk:"key",cols:[["key","text"],["value","text"],["notes","text"]]},
+  Runs:{pk:"run_id",cols:[["run_id","id"],["run_month","date"],["period_start","date"],["period_end","date"],["status",["Planned","Open","Closed"]],["notes","text"]]},
+  Owners:{pk:"owner_id",cols:[["owner_id","id"],["name","text"],["type",["Internal","External","Bot"]],["team_or_company","text"],["role_note","text"],["capacity_per_run","num"],["active",YN]]},
+  Ownerships:{cols:[["owner_id","fk:Owners"],["role",ROLES],["return_id","fk:Returns"],["run_id","fk:Runs"],["issue_id","fk:Issues"],["task_id","fk:Tasks"],["from_date","date"],["to_date","date"]]},
+  Countries:{pk:"country_code",cols:[["country_code","id"],["name","text"],["is_union",YN],["currency","text"],["notes","text"]]},
+  Regions:{pk:"region_code",cols:[["region_code","id"],["country_code","fk:Countries"],["parent_region","fk:Regions"],["name","text"],["level",["State","Province","County","City","District","Other"]],["notes","text"]]},
+  ReturnTypes:{pk:"return_type_id",cols:[["return_type_id","id"],["name","text"],["country_code","fk:Countries"],["region_code","fk:Regions"],["tax_type",["Sales","Use","Vendor use","Lease transaction","VAT","GST","PST"]],["frequency",["Weekly","Semi-monthly","Monthly","Quarterly","Part-quarterly","Semi-annual","Annual"]],["workflow",["Standard","WARP","Prepayment","Historical"]],["active",YN],["notes","text"]]},
+  Customers:{pk:"customer_id",cols:[["customer_id","id"],["name","text"],["org_id","text"],["tier",["Managed","Self-serve"]],["status",["Active","Hold","Offboarding","Closed"]],["release_owner","fk:Owners"],["customer_approver","fk:Owners"],["historical_scope",["Release with current","Ask customer first"]],["internal_review",YN],["notes","text"]]},
+  Registrations:{pk:"registration_id",cols:[["registration_id","id"],["customer_id","fk:Customers"],["return_type_id","fk:ReturnTypes"],["account_source","text"],["account_ref","text"],["active_from","date"],["active_to","date"],["frequency_source",["Portal","Notice","Customer"]],["verified_by","fk:Owners"],["last_portal_check","date"],["notes","text"]]},
+  Returns:{pk:"return_id",cols:[["return_id","id"],["registration_id","fk:Registrations"],["run_id","fk:Runs"],["period_start","date"],["period_end","date"],["kind",["Regular","Historical","Amendment","Prepayment"]],["stage",STAGES],["state",STATES],["calculated","num"],["collected","num"],["due","num"],["statutory_due","date"],["released_on","date"],["approved_on","date"],["submitted_on","date"],["confirmation_no","text"],["reason","text"],["notes","text"]]},
+  ReturnEvents:{pk:"event_id",readonly:true,cols:[["event_id","id"],["return_id","fk:Returns"],["at","text"],["from_stage","text"],["to_stage","text"],["from_state","text"],["to_state","text"],["actor","fk:Owners"],["source","text"],["note","text"]]},
+  Issues:{pk:"issue_id",cols:[["issue_id","id"],["category",["Data sync / integration","Product tax code (PTC)","Calc vs collected diff","Registration / frequency change","Prepayment / credit / carryforward","Account / portal access","Customer input needed","Customer offboarding","Generation / product bug"]],["severity",["S1","S2","S3"]],["status",["Open","Waiting on customer","Waiting on eng","Resolved","Won't fix"]],["opened_on","date"],["due_by","date"],["description","text"],["detected_by",["Internal review","Agent review / validator","Customer","Tax authority notice","Eng"]],["resolution","text"],["systemic_fix",YN],["source","text"],["source_ref","text"]]},
+  IssueLinks:{cols:[["issue_id","fk:Issues"],["return_id","fk:Returns"],["registration_id","fk:Registrations"],["customer_id","fk:Customers"]]},
+  BalancesNotices:{pk:"notice_id",cols:[["notice_id","id"],["customer_id","fk:Customers"],["place","text"],["kind",["Notice","Balance due","Credit","Reversed payment"]],["period","text"],["amount","num"],["received_on","date"],["respond_by","date"],["status",["Open","In progress","Closed"]],["owner_id","fk:Owners"],["issue_id","fk:Issues"]]},
+  Tasks:{pk:"task_id",cols:[["task_id","id"],["title","text"],["kind",["Run","Return","Return step","Pre-run check","Milestone","Chase","Notice response","Follow-up","Other"]],["return_filter","text"],["run_id","fk:Runs"],["template_id","fk:Tasks"],["return_type_id","fk:ReturnTypes"],["return_id","fk:Returns"],["issue_id","fk:Issues"],["customer_id","fk:Customers"],["notice_id","fk:BalancesNotices"],["anchor",["BD","CD","DUE"]],["offset","num"],["completes_stage","num"],["applies_to_tier",["All","A"]],["owner_role",["Preparer","Reviewer","Release owner"]],["due_date","date"],["status",["Template","Not started","In progress","Done","Skipped"]],["done_on","date"],["notes","text"]]},
+  ReturnTypeRules:{pk:"rule_id",cols:[["rule_id","id"],["return_type_id","fk:ReturnTypes"],["field",RULE_FIELDS],["value","text"],["valid_from","date"],["notes","text"]]},
+  TaskRelations:{pk:"relation_id",cols:[["relation_id","id"],["from_task_id","fk:Tasks"],["to_task_id","fk:Tasks"],["relation_type",REL_TYPES],["notes","text"]]},
+  Holidays:{cols:[["date","date"],["calendar","text"]]},
+};
+const NOTE={ReturnTypes:"The master list of return types: place, tax type, frequency and workflow. Its rules (due rule, automation, default owners) live in ReturnTypeRules. Its checklist is the Tasks rows with this return_type_id.",ReturnTypeRules:"One row per rule change: a field, its new value and the date it applies from. For any period the app takes, field by field, the latest row on or before the period end, so changes stack: a later change to one field never drops an earlier change to another. Values are copied onto each return at kick-off, so past returns don't move.",TaskRelations:"Links between tasks. Subtask of builds the tree (step → Return task → Run task); Blocks means the first task must finish before the second; Duplicates and Relates to are for people and agents. A task has at most one parent.",Tasks:"Every run and every return has one header task (kind Run or Return) that carries its id; steps reach their return through TaskRelations. return_filter says which returns a run task is about, e.g. stage<6; state=Open. Rows with no run are templates: run checklists, or return checklists when return_type_id is set. DUE anchors count days from the return's submit due date. Create this run's tasks from the Tasks tab; each copy keeps template_id.",Ownerships:"Who owns what. Each row points at exactly one return, run, issue or task. Close a row with to_date instead of deleting it.",ReturnEvents:"Append-only history. Written by the app whenever a stage or state changes.",IssueLinks:"Each row links an issue to exactly one return, registration or customer.",Registrations:"Each registration points at a return type. A frequency change closes the row with active_to and starts a new row, on the new return type, the next day."};
+const localDate = d => d ? new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) : null;
+function nextId(sheet){ const pk=SCHEMA[sheet].pk; let best=null,n=0,w=4,pre="";
+  for(const r of DB[sheet]){ const m=/^(.*?)(\d+)$/.exec(String(r[pk]||"")); if(m && +m[2]>=n){ n=+m[2]; pre=m[1]; w=m[2].length; best=1; } }
+  return best ? pre+String(n+1).padStart(w,"0") : null; }
+function cellText(v,type){ if(v==null) return ""; if(type==="date") return iso(toDate(v)); if(type==="num") return typeof v==="number"?v.toLocaleString("en-US",{maximumFractionDigits:2}):String(v); if(v instanceof Date) return iso(toDate(v)); return String(v); }
+
+const dv={sheet:"Checks", q:"", limit:400};
+function viewData(m){
+  const tabs=["Checks",...SHEETS];
+  const errs=C.checks.filter(c=>c.level==="Error").length;
+  const sub=k=>`<button class="subtab" role="tab" aria-selected="${dv.sheet===k}" data-sheet="${k}">${k==="Checks"?`Checks ${errs?chip(errs,"c-bad"):""}`:k} ${k!=="Checks"?`<span class="muted small">${DB[k].length}</span>`:""}</button>`;
+  let body;
+  if(dv.sheet==="Checks"){
+    const ch=C.checks, list=[...ch.filter(c=>c.level==="Error"),...ch.filter(c=>c.level!=="Error")];
+    body=`<p class="note">Excel can't enforce links between sheets, so these checks stand in for the database constraints: every id points at a row that exists, ownership and issue links point at exactly one thing, registration dates never overlap, blocked returns have an issue, and on hold or not required returns have a reason. Click a problem to open that row.</p>
+    <div class="tbl-wrap"><table><thead><tr><th>Level</th><th>Sheet</th><th class="num">Row</th><th>Problem</th></tr></thead><tbody>${list.length?list.slice(0,800).map(c=>`<tr data-goto="${esc(c.sheet)}|${c.row}" style="cursor:pointer"><td>${chip(c.level,c.level==="Error"?"c-bad":"c-warn")}</td><td>${esc(c.sheet)}</td><td class="num">${c.row}</td><td class="wrapcell">${esc(c.msg)}</td></tr>`).join(""):`<tr><td colspan="4">${chip("All checks pass","c-ok")}</td></tr>`}</tbody></table></div>`;
+  } else {
+    const sc=SCHEMA[dv.sheet], rows=DB[dv.sheet];
+    const fkMaps={}; sc.cols.forEach(([k,t])=>{ if(String(t).startsWith("fk:")){ const tt=t.slice(3); fkMaps[tt]=fkMaps[tt]||idx(DB[tt],SCHEMA[tt].pk); } });
+    const bad=new Map(); C.checks.filter(c=>c.sheet===dv.sheet).forEach(c=>{ (bad.get(c.row)||bad.set(c.row,[]).get(c.row)).push(c); });
+    const q=dv.q.toLowerCase();
+    let shown=rows; if(q) shown=rows.filter(r=>sc.cols.some(([k,t])=>cellText(r[k],t).toLowerCase().includes(q)));
+    if(dv.only) shown=shown.filter(r=>bad.has(r._row));
+    body=`<div class="filters"><input type="search" id="dq" placeholder="Search ${esc(dv.sheet)}" value="${esc(dv.q)}"><label class="small"><input type="checkbox" id="donly" ${dv.only?"checked":""}> Only rows with problems</label>${sc.readonly?`<span class="muted small">Read-only</span>`:`<button id="addRow">Add row</button>`}<span class="muted small">${shown.length} of ${rows.length} rows${sc.readonly?"":" · click a cell to edit"}</span></div>
+    ${NOTE[dv.sheet]?`<p class="note">${NOTE[dv.sheet]}</p>`:""}
+    <div class="tbl-wrap" id="dwrap"><table class="dtable"><thead><tr><th class="num">Row</th>${sc.cols.map(([k,t])=>`<th title="${esc(typeof t==="string"?t:"one of: "+t.join(", "))}">${esc(k)}${String(t).startsWith("fk:")?` <span class="fk">→ ${esc(t.slice(3))}</span>`:""}</th>`).join("")}</tr></thead><tbody>
+    ${shown.slice(0,dv.limit).map(r=>{ const b=bad.get(r._row); return `<tr class="${b?(b.some(x=>x.level==="Error")?"rowbad":"rowwarn"):""}" ${b?`title="${esc(b.map(x=>x.msg).join("\n"))}"`:""}><td class="num muted">${r._row}</td>${sc.cols.map(([k,t])=>{ const isFk=String(t).startsWith("fk:"); const broken=(isFk&&r[k]!=null&&!fkMaps[t.slice(3)].has(String(r[k])))||(Array.isArray(t)&&r[k]!=null&&!t.includes(r[k])); return `<td class="ed ${t==="num"?"num":""} ${broken?"broken":""} ${(k===sc.pk&&r[k]!=null)||sc.readonly?"ro":""}" data-r="${r._row}" data-k="${k}">${esc(cellText(r[k],t))}</td>`; }).join("")}</tr>`; }).join("")}
+    </tbody></table></div>${shown.length>dv.limit?`<div class="more"><button id="dmore">Show ${Math.min(400,shown.length-dv.limit)} more of ${shown.length-dv.limit}</button></div>`:""}`;
+  }
+  m.innerHTML=`<div class="view"><div class="subtabs" role="tablist">${tabs.map(sub).join("")}</div>${body}</div>`;
+  m.querySelectorAll(".subtab").forEach(b=>b.addEventListener("click",()=>{ dv.sheet=b.dataset.sheet; dv.q=""; dv.only=false; dv.limit=400; route(); }));
+  m.querySelectorAll("tr[data-goto]").forEach(tr=>tr.addEventListener("click",()=>{ const [s,row]=tr.dataset.goto.split("|"); dv.sheet=s; dv.q=""; dv.only=true; dv.limit=400; route(); const el=[...document.querySelectorAll(`td[data-r="${row}"]`)][0]; el?.scrollIntoView({block:"center"}); el?.parentElement.classList.add("flash"); }));
+  if(dv.sheet==="Checks") return;
+  const dq=document.getElementById("dq"); dq.addEventListener("input",()=>{ dv.q=dq.value; clearTimeout(viewData.t); viewData.t=setTimeout(()=>{ route(); const e=document.getElementById("dq"); e.focus(); e.setSelectionRange(e.value.length,e.value.length); },200); });
+  document.getElementById("donly").addEventListener("change",e=>{ dv.only=e.target.checked; route(); });
+  document.getElementById("dmore")?.addEventListener("click",()=>{ dv.limit+=400; route(); });
+  document.getElementById("addRow")?.addEventListener("click",addRow);
+  document.querySelector(".dtable tbody").addEventListener("click",e=>{ const td=e.target.closest("td.ed"); if(td && !td.classList.contains("ro") && !td.querySelector("input,select")) editCell(td); });
+}
+function addRow(){
+  const sheet=dv.sheet, sc=SCHEMA[sheet], o={};
+  sc.cols.forEach(([k])=>o[k]=null);
+  if(sc.pk && sc.cols.find(c=>c[0]===sc.pk)[1]==="id"){ const id=nextId(sheet); if(id) o[sc.pk]=id; }
+  if(sheet==="Ownerships"){ o.from_date=localDate(C.dates.asOf); }
+  if(sheet==="Returns"){ o.run_id=C.run.run_id; o.stage=STAGES[0]; o.state="Open"; o.kind="Regular"; }
+  if(sheet==="Issues"){ o.status="Open"; o.opened_on=localDate(C.dates.asOf); }
+  DB[sheet].push(row(o,sheet)); dv.q=""; dv.only=false; dv.limit=Math.max(dv.limit,DB[sheet].length);
+  dirty(); compute(); route();
+  const w=document.getElementById("dwrap"); if(w) w.scrollTop=w.scrollHeight;
+  toast(`Added row ${o._row} to ${sheet}${o[sc.pk]?` as ${o[sc.pk]}`:""}. Fill in the highlighted links.`);
+}
+function editCell(td){
+  const sheet=dv.sheet, sc=SCHEMA[sheet], k=td.dataset.k, r=DB[sheet].find(x=>x._row===+td.dataset.r), type=sc.cols.find(c=>c[0]===k)[1];
+  const cur=r[k]; let el;
+  if(Array.isArray(type)){ el=document.createElement("select"); el.innerHTML=`<option value=""></option>`+type.map(v=>`<option ${v===cur?"selected":""}>${esc(v)}</option>`).join(""); }
+  else if(String(type).startsWith("fk:")){
+    const t=type.slice(3), pk=SCHEMA[t].pk, label=x=>x.name||x.description||x.registration_id&&`${x.customer_id} ${x.region_code||x.country_code} ${x.tax_type}`||x.stage||"";
+    if(DB[t].length<=300){ el=document.createElement("select"); el.innerHTML=`<option value=""></option>`+DB[t].map(x=>`<option value="${esc(x[pk])}" ${String(x[pk])===String(cur)?"selected":""}>${esc(x[pk])} · ${esc(String(label(x)).slice(0,40))}</option>`).join(""); }
+    else { el=document.createElement("input"); el.setAttribute("list","dl-"+t); el.value=cur??""; if(!document.getElementById("dl-"+t)){ const dl=document.createElement("datalist"); dl.id="dl-"+t; dl.innerHTML=DB[t].map(x=>`<option value="${esc(x[pk])}">${esc(String(label(x)).slice(0,40))}</option>`).join(""); document.body.appendChild(dl); } }
+  }
+  else if(type==="date"){ el=document.createElement("input"); el.type="date"; el.value=iso(toDate(cur)); }
+  else if(type==="num"){ el=document.createElement("input"); el.type="number"; el.step="any"; el.value=cur??""; }
+  else { el=document.createElement("input"); el.value=cur??""; }
+  el.className="cell-ed"; td.textContent=""; td.appendChild(el); el.focus();
+  let done=false;
+  const commit=()=>{ if(done) return; done=true; let v=el.value.trim();
+    let nv = v==="" ? null : type==="num" ? +v : type==="date" ? (()=>{ const [y,mo,d]=v.split("-").map(Number); return new Date(y,mo-1,d); })() : v;
+    const same = type==="date" ? iso(toDate(cur))===iso(toDate(nv)) : String(cur??"")===String(nv??"");
+    if(same){ route(); return; }
+    if(k===sc.pk && nv!=null && DB[sheet].some(x=>x!==r && String(x[k])===String(nv))){ toast(`${nv} is already used in ${sheet}.`); route(); return; }
+    if(sheet==="Returns" && (k==="stage"||k==="state")){
+      DB.ReturnEvents.push(row({event_id:nextId("ReturnEvents")||"EV-1",return_id:r.return_id,at:new Date().toISOString().slice(0,16).replace("T"," "),from_stage:r.stage,to_stage:k==="stage"?nv:r.stage,from_state:r.state,to_state:k==="state"?nv:r.state,actor:C.ownerOf("R:"+r.return_id,"Preparer")||"RB",source:"Person",note:"Edited in table"},"ReturnEvents"));
+    }
+    const w=document.getElementById("dwrap"), st=w?[w.scrollTop,w.scrollLeft]:null;
+    r[k]=nv; dirty(); compute(); route();
+    const w2=document.getElementById("dwrap"); if(w2&&st){ w2.scrollTop=st[0]; w2.scrollLeft=st[1]; }
+  };
+  el.addEventListener("change",commit); el.addEventListener("blur",commit);
+  el.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); commit(); } if(e.key==="Escape"){ done=true; route(); } });
+}
+
+/* ---------- save ---------- */
+/* ---------- the database is Supabase: load every table, save only changed or new rows ---------- */
+// Sheet name in the app ↔ table in Postgres, in an order that keeps foreign keys happy on save.
+const TABLES = [["Settings","settings","key"],["Owners","owners","owner_id"],["Countries","countries","country_code"],["Regions","regions","region_code"],
+  ["Customers","customers","customer_id"],["Runs","runs","run_id"],["ReturnTypes","return_types","return_type_id"],["ReturnTypeRules","return_type_rules","rule_id"],
+  ["Registrations","registrations","registration_id"],["Returns","returns","return_id"],["ReturnEvents","return_events","event_id"],["Issues","issues","issue_id"],
+  ["IssueLinks","issue_links","link_id"],["BalancesNotices","balances_notices","notice_id"],["Tasks","tasks","task_id"],["TaskRelations","task_relations","relation_id"],
+  ["Ownerships","ownerships","ownership_id"],["Holidays","holidays","date,calendar"]];
+const IDENTITY = new Set(["link_id","ownership_id"]);           // ids Postgres assigns
+const BOOLS = new Set(["active","is_union","internal_review","systemic_fix"]);  // Yes/No in the app
+const STAMPS = new Set(["created_at","updated_at","deleted_at"]);
+const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+const sb = window.supabase.createClient(window.WORKBENCH.supabaseUrl, window.WORKBENCH.supabaseKey);
+const SNAP = {};
+const p2 = n => String(n).padStart(2,"0");
+function toDb(k, v){
+  if(v === undefined) return null;
+  if(BOOLS.has(k)) return v == null ? null : (v === true || v === "Yes");
+  if(v instanceof Date) return (v.getHours()||v.getMinutes()) ? v.toISOString() : `${v.getFullYear()}-${p2(v.getMonth()+1)}-${p2(v.getDate())}`;
+  return v;
+}
+function fromDb(k, v){
+  if(BOOLS.has(k)) return v == null ? null : (v ? "Yes" : "No");
+  if(typeof v === "string"){ v = v.trim(); if(v === "") return null; const m = DATE_RE.exec(v); if(m) return new Date(+m[1], +m[2]-1, +m[3]); }
+  return v;
+}
+const rowKey = (pk, r) => pk.split(",").map(k => String(toDb(k, r[k]))).join("|");
+const rowJson = r => JSON.stringify(Object.keys(r).filter(k => !STAMPS.has(k)).sort().map(k => [k, toDb(k, r[k])]));
+async function fetchAll(table){
+  const out = []; const page = 1000;
+  for(let from = 0; ; from += page){
+    const { data, error } = await sb.from(table).select("*").is("deleted_at", null).order(TABLES.find(t=>t[1]===table)[2].split(",")[0]).range(from, from + page - 1);
+    if(error) throw error; out.push(...data); if(data.length < page) return out;
+  }
+}
+async function loadDb(){
+  document.getElementById("main").innerHTML = `<div class="drop"><b>Loading…</b></div>`;
+  try{
+    const all = await Promise.all(TABLES.map(([, t]) => fetchAll(t)));
+    const db = {};
+    TABLES.forEach(([sheet, , pk], i) => {
+      db[sheet] = all[i].map((r, j) => { const o = {}; for(const k in r){ if(!STAMPS.has(k)) o[k] = fromDb(k, r[k]); }
+        Object.defineProperty(o, "_row", {value: j+2, enumerable: false, writable: true}); return o; });
+      SNAP[sheet] = new Map(db[sheet].map(r => [rowKey(pk, r), rowJson(r)]));
+    });
+    db._missing = [];
+    if(!db.Runs.length){ emptyView(); return; }
+    DB = db; changes = 0; document.getElementById("saveBtn").textContent = "Save";
+    compute(); route();
+  }catch(e){ document.getElementById("main").innerHTML = `<div class="drop"><b>Could not load the database.</b><span class="note">${esc(e.message||String(e))}</span></div>`; }
+}
+async function saveDb(){
+  if(!DB) return;
+  const btn = document.getElementById("saveBtn"); btn.disabled = true; btn.textContent = "Saving…";
+  let n = 0;
+  try{
+    for(const [sheet, table, pk] of TABLES){
+      const ups = [], ins = [], objs = [];
+      // a parent region must exist before its children
+      const rows = sheet === "Regions" ? (DB[sheet]||[]).slice().sort((a, b) => (a.parent_region ? 1 : 0) - (b.parent_region ? 1 : 0)) : (DB[sheet]||[]);
+      for(const r of rows){
+        const isNew = pk.split(",").some(k => IDENTITY.has(k) && r[k] == null);
+        if(!isNew && SNAP[sheet].get(rowKey(pk, r)) === rowJson(r)) continue;
+        const o = {}; for(const k in r){ if(!STAMPS.has(k) && !(IDENTITY.has(k) && r[k] == null)) o[k] = toDb(k, r[k]); }
+        (isNew ? ins : ups).push(o); if(isNew) objs.push(r);
+      }
+      for(let i = 0; i < ups.length; i += 500){ const { error } = await sb.from(table).upsert(ups.slice(i, i+500), { onConflict: pk }); if(error) throw new Error(`${table}: ${error.message}`); }
+      for(let i = 0; i < ins.length; i += 500){ const { data, error } = await sb.from(table).insert(ins.slice(i, i+500)).select(pk); if(error) throw new Error(`${table}: ${error.message}`);
+        data.forEach((d, j) => { objs[i+j][pk] = d[pk]; }); }
+      n += ups.length + ins.length;
+      SNAP[sheet] = new Map(DB[sheet].map(r => [rowKey(pk, r), rowJson(r)]));
+    }
+    changes = 0; btn.textContent = "Save"; toast(n ? `Saved ${n} rows` : "Nothing to save");
+  }catch(e){ btn.textContent = `Save (${changes})`; toast("Save failed: " + (e.message||e)); }
+  btn.disabled = false;
+}
+// an empty database: load a workbook (same layout as the prototype) and save it in
+function emptyView(){
+  document.getElementById("main").innerHTML = `<div class="drop" id="drop"><b>The database is empty.</b>
+    <span class="note">Load a workbook with one sheet per list and field names in row 1 (data/sample_db.xlsx in the repo), check it, then press Save to write it in.</span>
+    <label class="btn" for="fileIn">Choose workbook</label></div>`;
+}
+document.getElementById("fileIn").addEventListener("change", e => { const f = e.target.files[0]; e.target.value = ""; if(!f) return;
+  const fr = new FileReader(); fr.onload = () => { try{ DB = readWorkbook(new Uint8Array(fr.result)); for(const [sheet] of TABLES) SNAP[sheet] = new Map();
+      changes = TABLES.reduce((n, [sheet]) => n + (DB[sheet]||[]).length, 0); document.getElementById("saveBtn").textContent = `Save (${changes})`;
+      compute(); route(); toast(`Loaded ${f.name}. Press Save to write ${changes} rows.`); }
+    catch(err){ toast("That file could not be read as a workbook."); } }; fr.readAsArrayBuffer(f); });
+// sign in with a one-time email link; the database only answers signed-in people
+function signInView(msg){
+  document.getElementById("main").innerHTML = `<div class="drop"><b>Sign in to Workbench</b>
+    <form id="signin" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center"><input type="email" id="email" required placeholder="you@company.com" style="font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;min-width:0"><button class="primary">Email me a sign-in link</button></form>
+    <span class="note" id="signmsg">${esc(msg||"")}</span></div>`;
+  document.getElementById("signin").addEventListener("submit", async e => { e.preventDefault();
+    const { error } = await sb.auth.signInWithOtp({ email: document.getElementById("email").value, options: { emailRedirectTo: location.origin + location.pathname } });
+    document.getElementById("signmsg").textContent = error ? error.message : "Check your email for the sign-in link."; });
+}
+async function boot(){
+  const { data: { session } } = await sb.auth.getSession();
+  if(!session){ signInView(); return; }
+  document.getElementById("who").textContent = session.user.email; document.getElementById("outBtn").hidden = false;
+  loadDb();
+}
+sb.auth.onAuthStateChange((ev) => { if(ev === "SIGNED_IN" && !DB) boot(); if(ev === "SIGNED_OUT"){ DB = null; signInView("Signed out."); } });
+document.getElementById("saveBtn").addEventListener("click", saveDb);
+document.getElementById("outBtn").addEventListener("click", () => sb.auth.signOut());
+document.getElementById("reloadBtn").addEventListener("click", () => { const b = document.getElementById("reloadBtn");
+  if(changes && b.dataset.armed !== "1"){ b.dataset.armed = "1"; b.textContent = "Discard edits and reload?"; setTimeout(() => { b.dataset.armed = ""; b.textContent = "Reload"; }, 4000); return; }
+  b.dataset.armed = ""; b.textContent = "Reload"; loadDb(); });
+function toast(t){ const el=document.getElementById("toast"); el.textContent=t; el.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>el.hidden=true,3200); }
+window.ui=ui; window.route=route;
+boot();
+</script>
+
+</html>
