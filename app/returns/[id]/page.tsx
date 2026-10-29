@@ -23,8 +23,8 @@ export default async function ReturnPage({ params }: { params: Promise<{ id: str
     db().from("return_rules").select("*").eq("return_id", id).order("rule_id").then(must),
     db().from("return_events").select("event_id, at, from_stage, to_stage, from_state, to_state, actor, source, note")
       .eq("return_id", id).is("deleted_at", null).order("at", { ascending: false }).limit(30).then(must),
-    db().from("issue_links").select("issue_id, issues(issue_id, category, severity, status, description, due_by)")
-      .eq("return_id", id).is("deleted_at", null).then(must),
+    db().from("task_relations").select("relation_id, issue:tasks!task_relations_from_task_id_fkey(task_id, title, kind, category, priority, status, waiting_on, description)")
+      .eq("to_task_id", ret.header_task_id ?? "").eq("relation_type", "Affects").is("deleted_at", null).then(must),
     owners(),
   ]);
   const sortedRules = [...rules].sort((a, b) => KIND_ORDER.indexOf(a.kind ?? "") - KIND_ORDER.indexOf(b.kind ?? ""));
@@ -36,7 +36,7 @@ export default async function ReturnPage({ params }: { params: Promise<{ id: str
         <Link className="hover:underline" href={`/returns?run=${ret.run_id}`}>Returns</Link> / <span className="font-mono">{ret.return_id}</span>
       </div>
       <PageHead title={ret.customer_name ?? id}
-        sub={<>{ret.type_name} · period {day(ret.period_start)} – {day(ret.period_end)}{ret.kind !== "Regular" ? ` · ${ret.kind}` : ""}</>}>
+        sub={<><Link className="underline decoration-line underline-offset-2 hover:decoration-ink" href={`/registration-types/${ret.registration_type_id}`}>{ret.type_name}</Link> · {ret.customer_name ? <Link className="underline decoration-line underline-offset-2 hover:decoration-ink" href={`/customers/${ret.customer_id}`}>customer page</Link> : null} · period {day(ret.period_start)} – {day(ret.period_end)}{ret.kind !== "Regular" ? ` · ${ret.kind}` : ""}</>}>
         <Badge tone={flagTone(ret.flag)}>{ret.flag}</Badge>
         <Badge tone={ret.tier === "A" ? "warn" : ret.tier === "?" ? "info" : "plain"}>Review tier {ret.tier}</Badge>
       </PageHead>
@@ -121,17 +121,17 @@ export default async function ReturnPage({ params }: { params: Promise<{ id: str
             </form>
           </Panel>
 
-          <Panel title="Issues">
-            {links.length === 0 ? <p className="px-4 py-3 text-muted">No issues linked.</p> : (
+          <Panel title="Issues affecting this return">
+            {links.length === 0 ? <p className="px-4 py-3 text-muted">No issues.</p> : (
               <ul className="divide-y divide-line">
-                {links.map((l) => l.issues && (
-                  <li key={l.issue_id} className="px-4 py-2.5 text-sm">
+                {links.map((l) => l.issue && (
+                  <li key={l.relation_id} className="px-4 py-2.5 text-sm">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium">{l.issues.category}</span>
-                      <Badge tone={l.issues.severity === "S1" ? "bad" : "warn"}>{l.issues.severity}</Badge>
-                      <Badge tone={l.issues.status === "Resolved" ? "good" : "plain"}>{l.issues.status}</Badge>
+                      <span className="font-medium">{l.issue.title}</span>
+                      {l.issue.priority ? <Badge tone={l.issue.priority === "P1" ? "bad" : l.issue.priority === "P2" ? "warn" : "plain"}>{l.issue.priority}</Badge> : null}
+                      <Badge tone={flagTone(l.issue.status)}>{l.issue.status === "Waiting" ? `Waiting on ${l.issue.waiting_on}` : l.issue.status}</Badge>
                     </div>
-                    <div className="text-muted">{l.issues.description}</div>
+                    <div className="text-muted">{l.issue.category}{l.issue.description && l.issue.description !== l.issue.title ? ` · ${l.issue.description}` : ""}</div>
                   </li>
                 ))}
               </ul>

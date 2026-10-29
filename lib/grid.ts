@@ -4,7 +4,7 @@
 export type FieldType = "text" | "number" | "date" | "bool";
 
 export type GridSpec = {
-  view: "task_grid" | "return_grid" | "issue_grid";
+  view: "task_grid" | "return_grid" | "customer_grid" | "registration_type_grid" | "registration_grid";
   key: string;
   fields: Record<string, FieldType>;
   search: string[];                       // what the quick search box looks in
@@ -18,8 +18,11 @@ export const GRIDS = {
       task_id: "text", title: "text", notes: "text", status: "text", due_date: "date", due_flag: "text", done_on: "date",
       kind: "text", kind_label: "text", parent_title: "text", owner_id: "text", owner_name: "text", owner_role: "text",
       blocked_by: "text", is_blocked: "bool", run_id: "text", return_id: "text", completes_stage: "number",
+      category: "text", priority: "text", description: "text", raised_on: "date", raised_by: "text", waiting_on: "text",
+      resolution: "text", source_ref: "text", customer_id: "text", customer_name: "text", affects: "text", returns_affected: "number",
+      registration_id: "text",
     },
-    search: ["title", "parent_title", "owner_name", "notes"],
+    search: ["title", "parent_title", "owner_name", "notes", "description", "customer_name", "category"],
     sort: [{ field: "due_date", asc: true }, { field: "task_id", asc: true }],
   },
   returns: {
@@ -34,14 +37,34 @@ export const GRIDS = {
     search: ["customer_name", "type_name", "place_code", "return_id"],
     sort: [{ field: "submit_due", asc: true }, { field: "return_id", asc: true }],
   },
-  issues: {
-    view: "issue_grid", key: "issue_id",
+  customers: {
+    view: "customer_grid", key: "customer_id",
     fields: {
-      issue_id: "text", category: "text", severity: "text", status: "text", opened_on: "date", due_by: "date",
-      description: "text", resolution: "text", detected_by: "text", returns_affected: "number", affects: "text",
+      customer_id: "text", name: "text", org_id: "text", tier: "text", status: "text", internal_review: "bool",
+      release_owner: "text", customer_approver: "text", registrations: "number", setup_open: "number", open_issues: "number", notes: "text",
     },
-    search: ["category", "description", "affects"],
-    sort: [{ field: "severity", asc: true }, { field: "opened_on", asc: false }],
+    search: ["name", "customer_id", "org_id"],
+    sort: [{ field: "name", asc: true }, { field: "customer_id", asc: true }],
+  },
+  registrationTypes: {
+    view: "registration_type_grid", key: "registration_type_id",
+    fields: {
+      registration_type_id: "text", name: "text", place_code: "text", country_code: "text", region_code: "text", tax_type: "text",
+      frequency: "text", workflow: "text", active: "bool", due_rule: "text", due_value: "text", automation: "text",
+      default_preparer: "text", default_reviewer: "text", customers: "number", template_tasks: "number",
+    },
+    search: ["name", "place_code", "registration_type_id"],
+    sort: [{ field: "name", asc: true }, { field: "registration_type_id", asc: true }],
+  },
+  registrations: {
+    view: "registration_grid", key: "registration_id",
+    fields: {
+      registration_id: "text", customer_id: "text", customer_name: "text", registration_type_id: "text", type_name: "text",
+      place_code: "text", tax_type: "text", frequency: "text", account_source: "text", account_ref: "text",
+      active_from: "date", active_to: "date", is_active: "bool", state: "text", verified_by: "text", last_portal_check: "date", setup_open: "number",
+    },
+    search: ["customer_name", "type_name", "account_ref", "registration_id"],
+    sort: [{ field: "customer_name", asc: true }, { field: "type_name", asc: true }, { field: "registration_id", asc: true }],
   },
 } satisfies Record<string, GridSpec>;
 

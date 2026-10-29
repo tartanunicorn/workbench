@@ -19,3 +19,19 @@ export function ownerName(map: Map<string, { name: string }>, id: string | null 
   if (!id) return "";
   return map.get(id)?.name ?? id;
 }
+
+export const countries = cache(async () =>
+  must(await db().from("countries").select("country_code, name").is("deleted_at", null).order("name")));
+
+export const regions = cache(async () =>
+  must(await db().from("regions").select("region_code, country_code, name").is("deleted_at", null).order("region_code")));
+
+export const customerList = cache(async () =>
+  must(await db().from("customers").select("customer_id, name, status").is("deleted_at", null).order("name")));
+
+export const registrationTypeList = cache(async () =>
+  must(await db().from("registration_types").select("registration_type_id, name").is("deleted_at", null).order("name")));
+
+export async function team() {
+  return [...(await owners()).values()].filter((o) => o.type !== "External" && o.active);
+}

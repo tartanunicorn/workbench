@@ -23,3 +23,20 @@ export function linkCell(href: (data: Record<string, unknown>) => string | null)
     return h ? <Link href={h} className="underline decoration-line underline-offset-2 hover:decoration-ink">{p.value}</Link> : <>{p.value}</>;
   };
 }
+
+export function PriorityCell(p: ICellRendererParams) {
+  if (!p.value) return null;
+  return <Badge tone={p.value === "P1" ? "bad" : p.value === "P2" ? "warn" : "plain"}>{p.value}</Badge>;
+}
+
+// The returns an issue affects, each a link
+export function AffectsCell(p: ICellRendererParams) {
+  if (!p.value) return null;
+  return (
+    <span className="flex gap-2 overflow-hidden">
+      {String(p.value).split(", ").map((id) => (
+        <Link key={id} href={`/returns/${id}`} className="font-mono text-xs underline decoration-line underline-offset-2 hover:decoration-ink">{id}</Link>
+      ))}
+    </span>
+  );
+}

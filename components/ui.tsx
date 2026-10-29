@@ -19,8 +19,8 @@ export function flagTone(flag: string | null | undefined): Tone {
   switch (flag) {
     case "Missed deadline": case "Late release": case "Filed late": case "Overdue": case "Blocked, no issue": return "bad";
     case "Submit at risk": case "Behind plan": case "Blocked": case "Due today": case "Due soon": case "can't tell": return "warn";
-    case "Done": case "On track": case "met": return "good";
-    case "Period open": case "In progress": return "info";
+    case "Done": case "On track": case "met": case "Active": return "good";
+    case "Period open": case "In progress": case "Waiting": case "Starts later": return "info";
     default: return "plain";
   }
 }

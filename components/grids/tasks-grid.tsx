@@ -5,7 +5,7 @@ import type { ColDef, ICellRendererParams } from "ag-grid-community";
 import { setTaskStatus } from "@/app/tasks/actions";
 import type { FilterModel, Scope } from "@/lib/grid";
 import { DATE, DataGrid, NUMBER, TEXT, type GridHandle } from "./data-grid";
-import { BadgeCell, linkCell } from "./cells";
+import { AffectsCell, BadgeCell, PriorityCell, linkCell } from "./cells";
 
 const TIMING = ["Overdue", "Due today", "Due soon", "Upcoming", "No due date"] as const;
 
@@ -16,6 +16,7 @@ function StatusActions(p: ICellRendererParams & { onChanged: () => void; onError
   const moves: [string, string][] =
     status === "Not started" ? [["In progress", "Start"], ["Done", "Done"]]
     : status === "In progress" ? [["Done", "Done"], ["Not started", "Undo"]]
+    : status === "Waiting" ? [["Done", "Done"], ["In progress", "Resume"]]
     : status === "Done" || status === "Skipped" ? [["Not started", "Reopen"]] : [];
   const go = async (to: string) => {
     setBusy(true);
@@ -35,15 +36,34 @@ function StatusActions(p: ICellRendererParams & { onChanged: () => void; onError
 }
 
 // The task list: every task in scope, filtered and sorted in the database. Cards above set the Timing filter.
-export function TasksGrid({ scope, counts, initialFilter, height, showParent = true, cards = true }: {
+export function TasksGrid({ scope, counts, initialFilter, height, showParent = true, cards = true, variant = "work" }: {
   scope: Scope[]; counts?: Record<string, number>; initialFilter?: FilterModel; height?: string; showParent?: boolean; cards?: boolean;
+  variant?: "work" | "issues";
 }) {
   const grid = useRef<GridHandle>(null);
   const router = useRouter();
   const [timing, setTiming] = useState<string | null>(initialFilter?.due_flag && "filter" in initialFilter.due_flag ? String(initialFilter.due_flag.filter) : null);
   const [error, setError] = useState<string | null>(null);
 
-  const columns = useMemo<ColDef[]>(() => [
+  const actions: ColDef = { colId: "actions", headerName: "", width: 150, sortable: false, filter: false, resizable: false, pinned: "right",
+    cellRenderer: StatusActions, cellRendererParams: { onChanged: () => { grid.current?.refresh(); router.refresh(); }, onError: setError } };
+
+  const columns = useMemo<ColDef[]>(() => variant === "issues" ? [
+    { field: "title", headerName: "Issue", flex: 2, minWidth: 260, ...TEXT, tooltipField: "description" },
+    { field: "priority", headerName: "Priority", width: 110, ...TEXT, cellRenderer: PriorityCell },
+    { field: "category", headerName: "Category", width: 200, ...TEXT },
+    { field: "status", headerName: "Status", width: 130, ...TEXT, cellRenderer: BadgeCell },
+    { field: "waiting_on", headerName: "Waiting on", width: 130, ...TEXT },
+    { field: "owner_name", headerName: "Owner", width: 160, ...TEXT },
+    { field: "customer_name", headerName: "Customer", width: 150, ...TEXT },
+    { field: "returns_affected", headerName: "Returns", width: 110, ...NUMBER },
+    { field: "affects", headerName: "Affects", flex: 1, minWidth: 180, ...TEXT, cellRenderer: AffectsCell },
+    { field: "raised_on", headerName: "Raised", width: 150, ...DATE },
+    { field: "due_date", headerName: "Due", width: 150, ...DATE },
+    { field: "resolution", headerName: "Resolution", flex: 1, minWidth: 200, ...TEXT, tooltipField: "resolution", hide: true },
+    { field: "description", headerName: "Description", flex: 2, minWidth: 260, ...TEXT, tooltipField: "description", hide: true },
+    actions,
+  ] : [
     { field: "title", headerName: "Task", flex: 2, minWidth: 240, ...TEXT, tooltipField: "notes" },
     ...(showParent ? [{ field: "parent_title", headerName: "Parent", flex: 2, minWidth: 220, ...TEXT,
       cellRenderer: linkCell((d) => (d.return_id ? `/returns/${d.return_id}` : d.run_id ? `/runs/${d.run_id}` : null)) } as ColDef] : []),
@@ -54,9 +74,8 @@ export function TasksGrid({ scope, counts, initialFilter, height, showParent = t
     { field: "status", headerName: "Status", width: 140, ...TEXT, cellRenderer: BadgeCell },
     { field: "blocked_by", headerName: "Blocked by", width: 140, ...TEXT, hide: !showParent },
     { field: "completes_stage", headerName: "Stage", width: 100, ...NUMBER, hide: showParent },
-    { colId: "actions", headerName: "", width: 150, sortable: false, filter: false, resizable: false, pinned: "right",
-      cellRenderer: StatusActions, cellRendererParams: { onChanged: () => { grid.current?.refresh(); router.refresh(); }, onError: setError } },
-  ], [showParent, router]);
+    actions,
+  ], [showParent, variant]);
 
   const pick = (t: string) => {
     const next = timing === t ? null : t;
@@ -78,7 +97,7 @@ export function TasksGrid({ scope, counts, initialFilter, height, showParent = t
         </div>
       ) : null}
       {error ? <div className="rounded border border-bad bg-bad-bg px-3 py-2 text-sm text-bad">{error}</div> : null}
-      <DataGrid ref={grid} grid="tasks" columns={columns} scope={scope} initialFilter={initialFilter} height={height} noun={["task", "tasks"]}
+      <DataGrid ref={grid} grid="tasks" columns={columns} scope={scope} initialFilter={initialFilter} height={height} noun={variant === "issues" ? ["issue", "issues"] : ["task", "tasks"]}
         onFilterChange={(m) => setTiming(m.due_flag && "filter" in m.due_flag ? String(m.due_flag.filter) : null)} />
     </div>
   );

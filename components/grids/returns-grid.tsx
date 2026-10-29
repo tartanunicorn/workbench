@@ -10,7 +10,7 @@ const money = (v: unknown) => (typeof v === "number" ? v.toLocaleString("en-US",
 export function ReturnsGrid({ scope, initialFilter }: { scope: Scope[]; initialFilter?: FilterModel }) {
   const columns = useMemo<ColDef[]>(() => [
     { field: "customer_name", headerName: "Customer", flex: 2, minWidth: 180, pinned: "left", ...TEXT, cellRenderer: linkCell((d) => `/returns/${d.return_id}`) },
-    { field: "type_name", headerName: "Return type", flex: 2, minWidth: 200, ...TEXT },
+    { field: "type_name", headerName: "Registration type", flex: 2, minWidth: 200, ...TEXT },
     { field: "place_code", headerName: "Place", width: 100, ...TEXT },
     { field: "kind", headerName: "Kind", width: 120, ...TEXT },
     { field: "period_end", headerName: "Period end", width: 150, ...DATE },
