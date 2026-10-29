@@ -908,7 +908,8 @@ async function loadDb(){
       SNAP[sheet] = new Map(db[sheet].map(r => [rowKey(pk, r), rowJson(r)]));
     });
     db._missing = [];
-    if(!db.Runs.length && !db.Owners.length){ seedDb(); return; }
+    // no runs means a new or half-seeded database: (re)run the seed; it upserts, so finished tables are untouched
+    if(!db.Runs.length){ seedDb(); return; }
     DB = db; changes = 0; document.getElementById("saveBtn").textContent = "Save";
     compute(); route();
   }catch(e){ document.getElementById("main").innerHTML = `<div class="drop"><b>Could not load the database.</b><span class="note">${esc(e.message||String(e))}</span></div>`; }
