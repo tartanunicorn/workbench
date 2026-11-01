@@ -10,11 +10,11 @@ function amount(v: FormDataEntryValue | null): number | null {
   return n;
 }
 
-// Changing the amounts re-runs the rules in the database (a trigger), so tier, flags and checklist follow at once.
+// A return is a task; its amounts live in the task's details. Changing them re-runs the rules in the database
+// (a trigger), so tier, flags and checklist follow at once. A blank amount is left out.
 export async function setAmounts(form: FormData) {
   const id = String(form.get("return_id") ?? "");
-  must(await db().from("returns").update({ calculated: amount(form.get("calculated")), collected: amount(form.get("collected")) })
-    .eq("return_id", id).select("return_id"));
+  must(await db().rpc("set_return_amounts", { p_return: id, p_calculated: amount(form.get("calculated")) ?? undefined, p_collected: amount(form.get("collected")) ?? undefined }));
   revalidatePath(`/returns/${id}`);
 }
 

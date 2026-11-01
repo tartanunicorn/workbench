@@ -24,8 +24,8 @@ export default async function ReturnPage({ params }: { params: Promise<{ id: str
 
   const [rules, events, links, people] = await Promise.all([
     db().from("return_rules").select("*").eq("return_id", id).order("rule_id").then(must),
-    db().from("return_events").select("event_id, at, from_stage, to_stage, from_state, to_state, actor, source, note")
-      .eq("return_id", id).is("deleted_at", null).order("at", { ascending: false }).limit(30).then(must),
+    db().from("task_events").select("event_id, at, from_stage, to_stage, from_state, to_state, actor, source, note")
+      .eq("task_id", id).is("deleted_at", null).order("at", { ascending: false }).limit(30).then(must),
     db().from("task_relations").select("relation_id, issue:tasks!task_relations_from_task_id_fkey(task_id, title, kind, category, priority, status, waiting_on, description)")
       .eq("to_task_id", ret.header_task_id ?? "").eq("relation_type", "Affects").is("deleted_at", null).then(must),
     owners(),

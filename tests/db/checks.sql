@@ -20,6 +20,40 @@ select pg_temp.expect('Oct 2026 tier A',   (select count(*) from return_board wh
 select pg_temp.expect('issue tasks',       (select count(*) from tasks where kind = 'Issue'), 18);
 select pg_temp.expect('old issue tables',  (select count(*) from pg_tables where schemaname = 'public' and tablename in ('issues', 'issue_links')), 0);
 
+-- Returns are tasks: the returns table is gone, every return is a task of kind Return with its fields in details
+select pg_temp.expect('returns table',     (select count(*) from pg_tables where schemaname = 'public' and tablename = 'returns'), 0);
+select pg_temp.expect('return tasks',      (select count(*) from tasks where kind = 'Return' and deleted_at is null), 1741);
+
+-- details are checked against the kind's fields
+create function pg_temp.rejects(stmt text) returns bigint language plpgsql as $$
+begin
+  execute stmt;
+  return 0;
+exception when others then
+  raise notice 'rejected as it should be: %', sqlerrm;
+  return 1;
+end $$;
+select pg_temp.expect('unknown field rejected',  pg_temp.rejects($$update tasks set details = details || '{"colour": "red"}' where task_id = (select min(task_id) from tasks where kind = 'Return')$$), 1);
+select pg_temp.expect('wrong type rejected',     pg_temp.rejects($$update tasks set details = details || '{"calculated": "lots"}' where task_id = (select min(task_id) from tasks where kind = 'Return')$$), 1);
+select pg_temp.expect('bad option rejected',     pg_temp.rejects($$update tasks set details = details || '{"stage": "10 Done"}' where task_id = (select min(task_id) from tasks where kind = 'Return')$$), 1);
+select pg_temp.expect('missing field rejected',  pg_temp.rejects($$update tasks set details = details - 'period_end' where task_id = (select min(task_id) from tasks where kind = 'Return')$$), 1);
+select pg_temp.expect('details on a plain task rejected', pg_temp.rejects($$update tasks set details = '{"calculated": 1}' where task_id = (select min(task_id) from tasks where kind = 'Issue')$$), 1);
+
+-- Entering amounts re-checks the rules: a large gap on an open tier B return makes it tier A
+savepoint amounts;
+create temp table pick on commit drop as
+  select return_id from return_board where run_id = 'RUN-2026-11' and tier = 'B' and stage_n < 6 order by return_id limit 1;
+select set_return_amounts((select return_id from pick), 100000, 1);
+select pg_temp.expect('large gap makes tier A', (select count(*) from return_board where return_id = (select return_id from pick) and tier = 'A'), 1);
+rollback to savepoint amounts;
+
+-- Kicking off the next run builds a return task, with its tasks, for every registration due
+savepoint kickoff;
+select pg_temp.expect('Dec 2026 returns kicked off', (select (kick_off_and_evaluate() ->> 'returns')::bigint), 777);
+select pg_temp.expect('Dec 2026 return tasks',       (select count(*) from return_board where run_id = 'RUN-2026-12'), 777);
+select pg_temp.expect('Dec 2026 tier A',             (select count(*) from return_board where run_id = 'RUN-2026-12' and tier = 'A'), 89);
+rollback to savepoint kickoff;
+
 -- Closing every open issue takes the returns they affect out of tier A
 savepoint issues;
 update tasks set status = 'Done', waiting_on = null where kind = 'Issue' and status not in ('Done', 'Skipped');
