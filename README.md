@@ -21,8 +21,8 @@ One name for each thing, on every screen (`lib/words.ts`):
 | Run | A month's filing run, such as the Nov 2026 run |
 | Registration type | What customers are registered to: a place, tax type and frequency (US-TX Sales · Monthly), with dated rules and the tasks every return of the type gets |
 | Registration | A customer registered to a registration type from a start date, with their account number |
-| Return | One filing for one registration and period |
-| Task | Anything someone has to do. A return's tasks hang off the return; a run's tasks hang off the run |
+| Return | One filing for one registration and period. It is a task of kind Return; its period, stage, amounts and dates are in the task's details |
+| Task | Anything someone has to do. Its kind (a row in `task_kinds`) says which extra fields it keeps in `details`. A return's tasks hang off the return; a run's tasks hang off the run |
 | Issue | A task of kind Issue: a problem that blocks returns or puts them at risk. It *affects* the returns it touches |
 | Priority | P1 (most urgent) to P3 |
 | Rule | A check run on every return. It comes out met, not met or can't tell |
@@ -41,13 +41,13 @@ One name for each thing, on every screen (`lib/words.ts`):
 | `components/ui-kit/` | [shadcn/ui](https://ui.shadcn.com) components (new-york, neutral); add more with `npx shadcn add <name>` |
 | `components/`, `lib/` | Workbench's own pieces built on them, the Supabase client, URL filters, formatting, and the evidence reader |
 | `lib/database.types.ts` | Types generated from the database (regenerate after a schema change) |
-| `supabase/migrations/` | The baseline (001: production on 29 Oct 2026, schema and sample data), then each change: functions out of the API (003), issues folded into tasks (010), registration types (011) and customer setup (012) |
+| `supabase/migrations/` | The baseline (001: production on 29 Oct 2026, schema and sample data), then each change: functions out of the API (003), issues folded into tasks (010), registration types (011) and customer setup (012), returns folded into tasks (013) |
 | `scripts/`, `data/` | How the sample was built from the original tracker export |
 | `tests/` | Unit tests (`npm test`) |
 
 ## The model in one paragraph
 
-**Registration types** say what is filed (place, tax type, frequency, workflow). Their rules (due day, automation, default owners) are **registration type rules**, dated rows that stack field by field. A **registration** links a customer to a registration type from a start date; registering a customer without an account number adds an Onboarding task to collect their portal login. **Kick off** creates a **run**, a **return** for every registration with a period ending that month, the return's **ownerships**, a header **task** for the run and each return, and each return's tasks with due dates. Then the **rules** are checked for every return: they set the tier, leave out tasks a return doesn't need (a tier B return skips the second review), and raise flags. **Task relations** link tasks: *Subtask of* builds the tree (task → return → run), *Blocks* stops a task until another is done, and *Affects* ties an issue to a return. A return's stage follows its finished tasks. **Issues** are tasks too: an issue *affects* returns (a task relation to each return's task) or belongs to a customer, and an open issue makes a return tier A.
+**Registration types** say what is filed (place, tax type, frequency, workflow). Their rules (due day, automation, default owners) are **registration type rules**, dated rows that stack field by field. A **registration** links a customer to a registration type from a start date; registering a customer without an account number adds an Onboarding task to collect their portal login. **Kick off** creates a **run** with its header task, a **return** (a task of kind Return) for every registration with a period ending that month, the return's **ownerships**, and each return's tasks with due dates. Then the **rules** are checked for every return: they set the tier, leave out tasks a return doesn't need (a tier B return skips the second review), and raise flags. **Task relations** link tasks: *Subtask of* builds the tree (task → return → run), *Blocks* stops a task until another is done, and *Affects* ties an issue to a return. A return's stage follows its finished tasks. **Task kinds** are data: each declares the fields its tasks keep in `details` (type, allowed values, required), and the database rejects any write that doesn't fit, so a new kind of operation is a new row rather than a new table. **Issues** are tasks too: an issue *affects* returns (a task relation to each return) or belongs to a customer, and an open issue makes a return tier A.
 
 ## Set up
 
