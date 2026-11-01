@@ -45,6 +45,18 @@ isOneToOne: false
       foreignKeyName: "balances_notices_task_id_fkey"
       columns: ["task_id"]
 isOneToOne: false
+      referencedRelation: "return_board"
+      referencedColumns: ["return_id"]
+    },{
+      foreignKeyName: "balances_notices_task_id_fkey"
+      columns: ["task_id"]
+isOneToOne: false
+      referencedRelation: "return_grid"
+      referencedColumns: ["return_id"]
+    },{
+      foreignKeyName: "balances_notices_task_id_fkey"
+      columns: ["task_id"]
+isOneToOne: false
       referencedRelation: "task_board"
       referencedColumns: ["parent_id"]
     },{
@@ -157,14 +169,14 @@ isOneToOne: false
                   ]
                 },"ownerships": {
                   Row: {
-                    "created_at": string,"deleted_at": string | null,"from_date": string | null,"owner_id": string,"ownership_id": number,"return_id": string | null,"role": string,"run_id": string | null,"task_id": string | null,"to_date": string | null,"updated_at": string
+                    "created_at": string,"deleted_at": string | null,"from_date": string | null,"owner_id": string,"ownership_id": number,"role": string,"run_id": string | null,"task_id": string | null,"to_date": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"deleted_at"?: string | null,"from_date"?: string | null,"owner_id": string,"ownership_id"?: never,"return_id"?: string | null,"role": string,"run_id"?: string | null,"task_id"?: string | null,"to_date"?: string | null,"updated_at"?: string
+                    "created_at"?: string,"deleted_at"?: string | null,"from_date"?: string | null,"owner_id": string,"ownership_id"?: never,"role": string,"run_id"?: string | null,"task_id"?: string | null,"to_date"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "created_at"?: string,"deleted_at"?: string | null,"from_date"?: string | null,"owner_id"?: string,"ownership_id"?: never,"return_id"?: string | null,"role"?: string,"run_id"?: string | null,"task_id"?: string | null,"to_date"?: string | null,"updated_at"?: string
+                    "created_at"?: string,"deleted_at"?: string | null,"from_date"?: string | null,"owner_id"?: string,"ownership_id"?: never,"role"?: string,"run_id"?: string | null,"task_id"?: string | null,"to_date"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -173,24 +185,6 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "owners"
       referencedColumns: ["owner_id"]
-    },{
-      foreignKeyName: "ownerships_return_id_fkey"
-      columns: ["return_id"]
-isOneToOne: false
-      referencedRelation: "return_board"
-      referencedColumns: ["return_id"]
-    },{
-      foreignKeyName: "ownerships_return_id_fkey"
-      columns: ["return_id"]
-isOneToOne: false
-      referencedRelation: "return_grid"
-      referencedColumns: ["return_id"]
-    },{
-      foreignKeyName: "ownerships_return_id_fkey"
-      columns: ["return_id"]
-isOneToOne: false
-      referencedRelation: "returns"
-      referencedColumns: ["return_id"]
     },{
       foreignKeyName: "ownerships_run_id_fkey"
       columns: ["run_id"]
@@ -209,6 +203,18 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "return_board"
       referencedColumns: ["header_task_id"]
+    },{
+      foreignKeyName: "ownerships_task_id_fkey"
+      columns: ["task_id"]
+isOneToOne: false
+      referencedRelation: "return_board"
+      referencedColumns: ["return_id"]
+    },{
+      foreignKeyName: "ownerships_task_id_fkey"
+      columns: ["task_id"]
+isOneToOne: false
+      referencedRelation: "return_grid"
+      referencedColumns: ["return_id"]
     },{
       foreignKeyName: "ownerships_task_id_fkey"
       columns: ["task_id"]
@@ -363,118 +369,72 @@ isOneToOne: false
       referencedColumns: ["owner_id"]
     }
                   ]
-                },"return_events": {
-                  Row: {
-                    "actor": string | null,"at": string,"created_at": string,"deleted_at": string | null,"event_id": string,"from_stage": string | null,"from_state": string | null,"note": string | null,"return_id": string,"source": string | null,"to_stage": string | null,"to_state": string | null,"updated_at": string
-                  }
-                  ComputedFields: never
-                  Insert: {
-                    "actor"?: string | null,"at"?: string,"created_at"?: string,"deleted_at"?: string | null,"event_id"?: string,"from_stage"?: string | null,"from_state"?: string | null,"note"?: string | null,"return_id": string,"source"?: string | null,"to_stage"?: string | null,"to_state"?: string | null,"updated_at"?: string
-                  }
-                  Update: {
-                    "actor"?: string | null,"at"?: string,"created_at"?: string,"deleted_at"?: string | null,"event_id"?: string,"from_stage"?: string | null,"from_state"?: string | null,"note"?: string | null,"return_id"?: string,"source"?: string | null,"to_stage"?: string | null,"to_state"?: string | null,"updated_at"?: string
-                  }
-                  Relationships: [
-                    {
-      foreignKeyName: "return_events_actor_fkey"
-      columns: ["actor"]
-isOneToOne: false
-      referencedRelation: "owners"
-      referencedColumns: ["owner_id"]
-    },{
-      foreignKeyName: "return_events_return_id_fkey"
-      columns: ["return_id"]
-isOneToOne: false
-      referencedRelation: "return_board"
-      referencedColumns: ["return_id"]
-    },{
-      foreignKeyName: "return_events_return_id_fkey"
-      columns: ["return_id"]
-isOneToOne: false
-      referencedRelation: "return_grid"
-      referencedColumns: ["return_id"]
-    },{
-      foreignKeyName: "return_events_return_id_fkey"
-      columns: ["return_id"]
-isOneToOne: false
-      referencedRelation: "returns"
-      referencedColumns: ["return_id"]
-    }
-                  ]
-                },"returns": {
-                  Row: {
-                    "approved_on": string | null,"calculated": number | null,"collected": number | null,"confirmation_no": string | null,"created_at": string,"deleted_at": string | null,"due": number | null,"kind": string,"notes": string | null,"period_end": string,"period_start": string,"reason": string | null,"registration_id": string,"released_on": string | null,"return_id": string,"run_id": string,"stage": string,"state": string,"statutory_due": string | null,"submitted_on": string | null,"updated_at": string
-                  }
-                  ComputedFields: never
-                  Insert: {
-                    "approved_on"?: string | null,"calculated"?: number | null,"collected"?: number | null,"confirmation_no"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"due"?: number | null,"kind"?: string,"notes"?: string | null,"period_end": string,"period_start": string,"reason"?: string | null,"registration_id": string,"released_on"?: string | null,"return_id"?: string,"run_id": string,"stage"?: string,"state"?: string,"statutory_due"?: string | null,"submitted_on"?: string | null,"updated_at"?: string
-                  }
-                  Update: {
-                    "approved_on"?: string | null,"calculated"?: number | null,"collected"?: number | null,"confirmation_no"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"due"?: number | null,"kind"?: string,"notes"?: string | null,"period_end"?: string,"period_start"?: string,"reason"?: string | null,"registration_id"?: string,"released_on"?: string | null,"return_id"?: string,"run_id"?: string,"stage"?: string,"state"?: string,"statutory_due"?: string | null,"submitted_on"?: string | null,"updated_at"?: string
-                  }
-                  Relationships: [
-                    {
-      foreignKeyName: "returns_registration_id_fkey"
-      columns: ["registration_id"]
-isOneToOne: false
-      referencedRelation: "registration_grid"
-      referencedColumns: ["registration_id"]
-    },{
-      foreignKeyName: "returns_registration_id_fkey"
-      columns: ["registration_id"]
-isOneToOne: false
-      referencedRelation: "registrations"
-      referencedColumns: ["registration_id"]
-    },{
-      foreignKeyName: "returns_run_id_fkey"
-      columns: ["run_id"]
-isOneToOne: false
-      referencedRelation: "run_calendar"
-      referencedColumns: ["run_id"]
-    },{
-      foreignKeyName: "returns_run_id_fkey"
-      columns: ["run_id"]
-isOneToOne: false
-      referencedRelation: "runs"
-      referencedColumns: ["run_id"]
-    }
-                  ]
                 },"rule_results": {
                   Row: {
-                    "evaluated_at": string,"evidence": NonNullable<Json>,"pinned": boolean,"result": string,"return_id": string,"rule_id": string
+                    "evaluated_at": string,"evidence": NonNullable<Json>,"pinned": boolean,"result": string,"rule_id": string,"task_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "evaluated_at"?: string,"evidence"?: NonNullable<Json>,"pinned"?: boolean,"result": string,"return_id": string,"rule_id": string
+                    "evaluated_at"?: string,"evidence"?: NonNullable<Json>,"pinned"?: boolean,"result": string,"rule_id": string,"task_id": string
                   }
                   Update: {
-                    "evaluated_at"?: string,"evidence"?: NonNullable<Json>,"pinned"?: boolean,"result"?: string,"return_id"?: string,"rule_id"?: string
+                    "evaluated_at"?: string,"evidence"?: NonNullable<Json>,"pinned"?: boolean,"result"?: string,"rule_id"?: string,"task_id"?: string
                   }
                   Relationships: [
                     {
-      foreignKeyName: "rule_results_return_id_fkey"
-      columns: ["return_id"]
-isOneToOne: false
-      referencedRelation: "return_board"
-      referencedColumns: ["return_id"]
-    },{
-      foreignKeyName: "rule_results_return_id_fkey"
-      columns: ["return_id"]
-isOneToOne: false
-      referencedRelation: "return_grid"
-      referencedColumns: ["return_id"]
-    },{
-      foreignKeyName: "rule_results_return_id_fkey"
-      columns: ["return_id"]
-isOneToOne: false
-      referencedRelation: "returns"
-      referencedColumns: ["return_id"]
-    },{
       foreignKeyName: "rule_results_rule_id_fkey"
       columns: ["rule_id"]
 isOneToOne: false
       referencedRelation: "rules"
       referencedColumns: ["rule_id"]
+    },{
+      foreignKeyName: "rule_results_task_id_fkey"
+      columns: ["task_id"]
+isOneToOne: false
+      referencedRelation: "return_board"
+      referencedColumns: ["header_task_id"]
+    },{
+      foreignKeyName: "rule_results_task_id_fkey"
+      columns: ["task_id"]
+isOneToOne: false
+      referencedRelation: "return_board"
+      referencedColumns: ["return_id"]
+    },{
+      foreignKeyName: "rule_results_task_id_fkey"
+      columns: ["task_id"]
+isOneToOne: false
+      referencedRelation: "return_grid"
+      referencedColumns: ["return_id"]
+    },{
+      foreignKeyName: "rule_results_task_id_fkey"
+      columns: ["task_id"]
+isOneToOne: false
+      referencedRelation: "task_board"
+      referencedColumns: ["parent_id"]
+    },{
+      foreignKeyName: "rule_results_task_id_fkey"
+      columns: ["task_id"]
+isOneToOne: false
+      referencedRelation: "task_board"
+      referencedColumns: ["task_id"]
+    },{
+      foreignKeyName: "rule_results_task_id_fkey"
+      columns: ["task_id"]
+isOneToOne: false
+      referencedRelation: "task_grid"
+      referencedColumns: ["parent_id"]
+    },{
+      foreignKeyName: "rule_results_task_id_fkey"
+      columns: ["task_id"]
+isOneToOne: false
+      referencedRelation: "task_grid"
+      referencedColumns: ["task_id"]
+    },{
+      foreignKeyName: "rule_results_task_id_fkey"
+      columns: ["task_id"]
+isOneToOne: false
+      referencedRelation: "tasks"
+      referencedColumns: ["task_id"]
     }
                   ]
                 },"rules": {
@@ -537,6 +497,88 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"task_events": {
+                  Row: {
+                    "actor": string | null,"at": string,"created_at": string,"deleted_at": string | null,"event_id": string,"from_stage": string | null,"from_state": string | null,"note": string | null,"source": string | null,"task_id": string,"to_stage": string | null,"to_state": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "actor"?: string | null,"at"?: string,"created_at"?: string,"deleted_at"?: string | null,"event_id"?: string,"from_stage"?: string | null,"from_state"?: string | null,"note"?: string | null,"source"?: string | null,"task_id": string,"to_stage"?: string | null,"to_state"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "actor"?: string | null,"at"?: string,"created_at"?: string,"deleted_at"?: string | null,"event_id"?: string,"from_stage"?: string | null,"from_state"?: string | null,"note"?: string | null,"source"?: string | null,"task_id"?: string,"to_stage"?: string | null,"to_state"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "task_events_actor_fkey"
+      columns: ["actor"]
+isOneToOne: false
+      referencedRelation: "owners"
+      referencedColumns: ["owner_id"]
+    },{
+      foreignKeyName: "task_events_task_id_fkey"
+      columns: ["task_id"]
+isOneToOne: false
+      referencedRelation: "return_board"
+      referencedColumns: ["header_task_id"]
+    },{
+      foreignKeyName: "task_events_task_id_fkey"
+      columns: ["task_id"]
+isOneToOne: false
+      referencedRelation: "return_board"
+      referencedColumns: ["return_id"]
+    },{
+      foreignKeyName: "task_events_task_id_fkey"
+      columns: ["task_id"]
+isOneToOne: false
+      referencedRelation: "return_grid"
+      referencedColumns: ["return_id"]
+    },{
+      foreignKeyName: "task_events_task_id_fkey"
+      columns: ["task_id"]
+isOneToOne: false
+      referencedRelation: "task_board"
+      referencedColumns: ["parent_id"]
+    },{
+      foreignKeyName: "task_events_task_id_fkey"
+      columns: ["task_id"]
+isOneToOne: false
+      referencedRelation: "task_board"
+      referencedColumns: ["task_id"]
+    },{
+      foreignKeyName: "task_events_task_id_fkey"
+      columns: ["task_id"]
+isOneToOne: false
+      referencedRelation: "task_grid"
+      referencedColumns: ["parent_id"]
+    },{
+      foreignKeyName: "task_events_task_id_fkey"
+      columns: ["task_id"]
+isOneToOne: false
+      referencedRelation: "task_grid"
+      referencedColumns: ["task_id"]
+    },{
+      foreignKeyName: "task_events_task_id_fkey"
+      columns: ["task_id"]
+isOneToOne: false
+      referencedRelation: "tasks"
+      referencedColumns: ["task_id"]
+    }
+                  ]
+                },"task_kinds": {
+                  Row: {
+                    "created_at": string,"deleted_at": string | null,"fields": NonNullable<Json>,"kind": string,"label": string,"notes": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"deleted_at"?: string | null,"fields"?: NonNullable<Json>,"kind": string,"label": string,"notes"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"deleted_at"?: string | null,"fields"?: NonNullable<Json>,"kind"?: string,"label"?: string,"notes"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"task_relations": {
                   Row: {
                     "created_at": string,"deleted_at": string | null,"from_task_id": string,"notes": string | null,"relation_id": string,"relation_type": string,"to_task_id": string,"updated_at": string
@@ -555,6 +597,18 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "return_board"
       referencedColumns: ["header_task_id"]
+    },{
+      foreignKeyName: "task_relations_from_task_id_fkey"
+      columns: ["from_task_id"]
+isOneToOne: false
+      referencedRelation: "return_board"
+      referencedColumns: ["return_id"]
+    },{
+      foreignKeyName: "task_relations_from_task_id_fkey"
+      columns: ["from_task_id"]
+isOneToOne: false
+      referencedRelation: "return_grid"
+      referencedColumns: ["return_id"]
     },{
       foreignKeyName: "task_relations_from_task_id_fkey"
       columns: ["from_task_id"]
@@ -591,6 +645,18 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "return_board"
       referencedColumns: ["header_task_id"]
+    },{
+      foreignKeyName: "task_relations_to_task_id_fkey"
+      columns: ["to_task_id"]
+isOneToOne: false
+      referencedRelation: "return_board"
+      referencedColumns: ["return_id"]
+    },{
+      foreignKeyName: "task_relations_to_task_id_fkey"
+      columns: ["to_task_id"]
+isOneToOne: false
+      referencedRelation: "return_grid"
+      referencedColumns: ["return_id"]
     },{
       foreignKeyName: "task_relations_to_task_id_fkey"
       columns: ["to_task_id"]
@@ -625,14 +691,14 @@ isOneToOne: false
                   ]
                 },"tasks": {
                   Row: {
-                    "anchor": string | null,"applies_to_tier": string | null,"category": string | null,"completes_stage": number | null,"created_at": string,"customer_id": string | null,"deleted_at": string | null,"description": string | null,"done_on": string | null,"due_date": string | null,"kind": string,"notes": string | null,"notice_id": string | null,"offset": number | null,"owner_role": string | null,"priority": string | null,"raised_by": string | null,"raised_on": string | null,"registration_id": string | null,"registration_type_id": string | null,"resolution": string | null,"return_filter": string | null,"return_id": string | null,"run_id": string | null,"source": string | null,"source_ref": string | null,"status": string | null,"systemic_fix": boolean | null,"task_id": string,"template_id": string | null,"title": string,"updated_at": string,"waiting_on": string | null
+                    "anchor": string | null,"applies_to_tier": string | null,"category": string | null,"completes_stage": number | null,"created_at": string,"customer_id": string | null,"deleted_at": string | null,"description": string | null,"details": NonNullable<Json>,"done_on": string | null,"due_date": string | null,"kind": string,"notes": string | null,"notice_id": string | null,"offset": number | null,"owner_role": string | null,"priority": string | null,"raised_by": string | null,"raised_on": string | null,"registration_id": string | null,"registration_type_id": string | null,"resolution": string | null,"return_filter": string | null,"run_id": string | null,"source": string | null,"source_ref": string | null,"status": string | null,"systemic_fix": boolean | null,"task_id": string,"template_id": string | null,"title": string,"updated_at": string,"waiting_on": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "anchor"?: string | null,"applies_to_tier"?: string | null,"category"?: string | null,"completes_stage"?: number | null,"created_at"?: string,"customer_id"?: string | null,"deleted_at"?: string | null,"description"?: string | null,"done_on"?: string | null,"due_date"?: string | null,"kind": string,"notes"?: string | null,"notice_id"?: string | null,"offset"?: number | null,"owner_role"?: string | null,"priority"?: string | null,"raised_by"?: string | null,"raised_on"?: string | null,"registration_id"?: string | null,"registration_type_id"?: string | null,"resolution"?: string | null,"return_filter"?: string | null,"return_id"?: string | null,"run_id"?: string | null,"source"?: string | null,"source_ref"?: string | null,"status"?: string | null,"systemic_fix"?: boolean | null,"task_id"?: string,"template_id"?: string | null,"title": string,"updated_at"?: string,"waiting_on"?: string | null
+                    "anchor"?: string | null,"applies_to_tier"?: string | null,"category"?: string | null,"completes_stage"?: number | null,"created_at"?: string,"customer_id"?: string | null,"deleted_at"?: string | null,"description"?: string | null,"details"?: NonNullable<Json>,"done_on"?: string | null,"due_date"?: string | null,"kind": string,"notes"?: string | null,"notice_id"?: string | null,"offset"?: number | null,"owner_role"?: string | null,"priority"?: string | null,"raised_by"?: string | null,"raised_on"?: string | null,"registration_id"?: string | null,"registration_type_id"?: string | null,"resolution"?: string | null,"return_filter"?: string | null,"run_id"?: string | null,"source"?: string | null,"source_ref"?: string | null,"status"?: string | null,"systemic_fix"?: boolean | null,"task_id"?: string,"template_id"?: string | null,"title": string,"updated_at"?: string,"waiting_on"?: string | null
                   }
                   Update: {
-                    "anchor"?: string | null,"applies_to_tier"?: string | null,"category"?: string | null,"completes_stage"?: number | null,"created_at"?: string,"customer_id"?: string | null,"deleted_at"?: string | null,"description"?: string | null,"done_on"?: string | null,"due_date"?: string | null,"kind"?: string,"notes"?: string | null,"notice_id"?: string | null,"offset"?: number | null,"owner_role"?: string | null,"priority"?: string | null,"raised_by"?: string | null,"raised_on"?: string | null,"registration_id"?: string | null,"registration_type_id"?: string | null,"resolution"?: string | null,"return_filter"?: string | null,"return_id"?: string | null,"run_id"?: string | null,"source"?: string | null,"source_ref"?: string | null,"status"?: string | null,"systemic_fix"?: boolean | null,"task_id"?: string,"template_id"?: string | null,"title"?: string,"updated_at"?: string,"waiting_on"?: string | null
+                    "anchor"?: string | null,"applies_to_tier"?: string | null,"category"?: string | null,"completes_stage"?: number | null,"created_at"?: string,"customer_id"?: string | null,"deleted_at"?: string | null,"description"?: string | null,"details"?: NonNullable<Json>,"done_on"?: string | null,"due_date"?: string | null,"kind"?: string,"notes"?: string | null,"notice_id"?: string | null,"offset"?: number | null,"owner_role"?: string | null,"priority"?: string | null,"raised_by"?: string | null,"raised_on"?: string | null,"registration_id"?: string | null,"registration_type_id"?: string | null,"resolution"?: string | null,"return_filter"?: string | null,"run_id"?: string | null,"source"?: string | null,"source_ref"?: string | null,"status"?: string | null,"systemic_fix"?: boolean | null,"task_id"?: string,"template_id"?: string | null,"title"?: string,"updated_at"?: string,"waiting_on"?: string | null
                   }
                   Relationships: [
                     {
@@ -647,6 +713,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "customers"
       referencedColumns: ["customer_id"]
+    },{
+      foreignKeyName: "tasks_kind_fkey"
+      columns: ["kind"]
+isOneToOne: false
+      referencedRelation: "task_kinds"
+      referencedColumns: ["kind"]
     },{
       foreignKeyName: "tasks_notice_id_fkey"
       columns: ["notice_id"]
@@ -665,24 +737,6 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "registrations"
       referencedColumns: ["registration_id"]
-    },{
-      foreignKeyName: "tasks_return_id_fkey"
-      columns: ["return_id"]
-isOneToOne: false
-      referencedRelation: "return_board"
-      referencedColumns: ["return_id"]
-    },{
-      foreignKeyName: "tasks_return_id_fkey"
-      columns: ["return_id"]
-isOneToOne: false
-      referencedRelation: "return_grid"
-      referencedColumns: ["return_id"]
-    },{
-      foreignKeyName: "tasks_return_id_fkey"
-      columns: ["return_id"]
-isOneToOne: false
-      referencedRelation: "returns"
-      referencedColumns: ["return_id"]
     },{
       foreignKeyName: "tasks_return_type_id_fkey"
       columns: ["registration_type_id"]
@@ -713,6 +767,18 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "return_board"
       referencedColumns: ["header_task_id"]
+    },{
+      foreignKeyName: "tasks_template_id_fkey"
+      columns: ["template_id"]
+isOneToOne: false
+      referencedRelation: "return_board"
+      referencedColumns: ["return_id"]
+    },{
+      foreignKeyName: "tasks_template_id_fkey"
+      columns: ["template_id"]
+isOneToOne: false
+      referencedRelation: "return_grid"
+      referencedColumns: ["return_id"]
     },{
       foreignKeyName: "tasks_template_id_fkey"
       columns: ["template_id"]
@@ -810,7 +876,7 @@ isOneToOne: false
                   ]
                 },"return_board": {
                   Row: {
-                    "account_ref": string | null,"approved_on": string | null,"authority_due": string | null,"calculated": number | null,"collected": number | null,"confirmation_no": string | null,"customer_approver": string | null,"customer_id": string,"customer_name": string,"flag": string | null,"frequency": string,"gap": number | null,"header_task_id": string | null,"kind": string,"notes": string | null,"open_issues": number | null,"period_end": string,"period_start": string,"place_code": string | null,"preparer": string | null,"reason": string | null,"registration_id": string,"registration_type_id": string,"release_by": string | null,"release_owner": string | null,"released_on": string | null,"return_id": string,"reviewer": string | null,"rule_flags": (string)[] | null,"run_id": string,"stage": string,"stage_n": number | null,"state": string,"steps_done": number | null,"steps_total": number | null,"submit_due": string | null,"submitted_on": string | null,"tax_type": string,"tier": string | null,"tier_reasons": (string)[] | null,"tier_unknowns": (string)[] | null,"type_name": string,"workflow": string
+                    "account_ref": string | null,"approved_on": string | null,"authority_due": string | null,"calculated": number | null,"collected": number | null,"confirmation_no": string | null,"customer_approver": string | null,"customer_id": string,"customer_name": string,"details": NonNullable<Json>,"flag": string | null,"frequency": string,"gap": number | null,"header_task_id": string,"kind": string | null,"notes": string | null,"open_issues": number | null,"period_end": string | null,"period_start": string | null,"place_code": string | null,"preparer": string | null,"reason": string | null,"registration_id": string | null,"registration_type_id": string,"release_by": string | null,"release_owner": string | null,"released_on": string | null,"return_id": string,"reviewer": string | null,"rule_flags": (string)[] | null,"run_id": string | null,"stage": string | null,"stage_n": number | null,"state": string | null,"steps_done": number | null,"steps_total": number | null,"submit_due": string | null,"submitted_on": string | null,"tax_type": string,"tier": string | null,"tier_reasons": (string)[] | null,"tier_unknowns": (string)[] | null,"type_name": string,"workflow": string
                   }
                   ComputedFields: never
                   Relationships: [
@@ -839,25 +905,25 @@ isOneToOne: false
       referencedRelation: "registration_types"
       referencedColumns: ["registration_type_id"]
     },{
-      foreignKeyName: "returns_registration_id_fkey"
+      foreignKeyName: "tasks_registration_id_fkey"
       columns: ["registration_id"]
 isOneToOne: false
       referencedRelation: "registration_grid"
       referencedColumns: ["registration_id"]
     },{
-      foreignKeyName: "returns_registration_id_fkey"
+      foreignKeyName: "tasks_registration_id_fkey"
       columns: ["registration_id"]
 isOneToOne: false
       referencedRelation: "registrations"
       referencedColumns: ["registration_id"]
     },{
-      foreignKeyName: "returns_run_id_fkey"
+      foreignKeyName: "tasks_run_id_fkey"
       columns: ["run_id"]
 isOneToOne: false
       referencedRelation: "run_calendar"
       referencedColumns: ["run_id"]
     },{
-      foreignKeyName: "returns_run_id_fkey"
+      foreignKeyName: "tasks_run_id_fkey"
       columns: ["run_id"]
 isOneToOne: false
       referencedRelation: "runs"
@@ -866,18 +932,18 @@ isOneToOne: false
                   ]
                 },"return_grid": {
                   Row: {
-                    "calculated": number | null,"collected": number | null,"customer_name": string,"flag": string | null,"frequency": string,"gap": number | null,"kind": string,"open_issues": number | null,"period_end": string,"period_start": string,"place_code": string | null,"preparer": string | null,"preparer_name": string | null,"release_by": string | null,"return_id": string,"reviewer": string | null,"reviewer_name": string | null,"rule_flags": string | null,"run_id": string,"stage": string,"stage_n": number | null,"state": string,"submit_due": string | null,"tasks_done": number | null,"tasks_total": number | null,"tax_type": string,"tier": string | null,"tier_reasons": string | null,"tier_unknowns": string | null,"type_name": string
+                    "calculated": number | null,"collected": number | null,"customer_name": string,"flag": string | null,"frequency": string,"gap": number | null,"kind": string | null,"open_issues": number | null,"period_end": string | null,"period_start": string | null,"place_code": string | null,"preparer": string | null,"preparer_name": string | null,"release_by": string | null,"return_id": string,"reviewer": string | null,"reviewer_name": string | null,"rule_flags": string | null,"run_id": string | null,"stage": string | null,"stage_n": number | null,"state": string | null,"submit_due": string | null,"tasks_done": number | null,"tasks_total": number | null,"tax_type": string,"tier": string | null,"tier_reasons": string | null,"tier_unknowns": string | null,"type_name": string
                   }
                   ComputedFields: never
                   Relationships: [
                     {
-      foreignKeyName: "returns_run_id_fkey"
+      foreignKeyName: "tasks_run_id_fkey"
       columns: ["run_id"]
 isOneToOne: false
       referencedRelation: "run_calendar"
       referencedColumns: ["run_id"]
     },{
-      foreignKeyName: "returns_run_id_fkey"
+      foreignKeyName: "tasks_run_id_fkey"
       columns: ["run_id"]
 isOneToOne: false
       referencedRelation: "runs"
@@ -891,55 +957,85 @@ isOneToOne: false
                   ComputedFields: never
                   Relationships: [
                     {
-      foreignKeyName: "rule_results_return_id_fkey"
+      foreignKeyName: "rule_results_rule_id_fkey"
+      columns: ["rule_id"]
+isOneToOne: false
+      referencedRelation: "rules"
+      referencedColumns: ["rule_id"]
+    },{
+      foreignKeyName: "rule_results_task_id_fkey"
+      columns: ["return_id"]
+isOneToOne: false
+      referencedRelation: "return_board"
+      referencedColumns: ["header_task_id"]
+    },{
+      foreignKeyName: "rule_results_task_id_fkey"
       columns: ["return_id"]
 isOneToOne: false
       referencedRelation: "return_board"
       referencedColumns: ["return_id"]
     },{
-      foreignKeyName: "rule_results_return_id_fkey"
+      foreignKeyName: "rule_results_task_id_fkey"
       columns: ["return_id"]
 isOneToOne: false
       referencedRelation: "return_grid"
       referencedColumns: ["return_id"]
     },{
-      foreignKeyName: "rule_results_return_id_fkey"
+      foreignKeyName: "rule_results_task_id_fkey"
       columns: ["return_id"]
 isOneToOne: false
-      referencedRelation: "returns"
-      referencedColumns: ["return_id"]
+      referencedRelation: "task_board"
+      referencedColumns: ["parent_id"]
     },{
+      foreignKeyName: "rule_results_task_id_fkey"
+      columns: ["return_id"]
+isOneToOne: false
+      referencedRelation: "task_board"
+      referencedColumns: ["task_id"]
+    },{
+      foreignKeyName: "rule_results_task_id_fkey"
+      columns: ["return_id"]
+isOneToOne: false
+      referencedRelation: "task_grid"
+      referencedColumns: ["parent_id"]
+    },{
+      foreignKeyName: "rule_results_task_id_fkey"
+      columns: ["return_id"]
+isOneToOne: false
+      referencedRelation: "task_grid"
+      referencedColumns: ["task_id"]
+    },{
+      foreignKeyName: "rule_results_task_id_fkey"
+      columns: ["return_id"]
+isOneToOne: false
+      referencedRelation: "tasks"
+      referencedColumns: ["task_id"]
+    }
+                  ]
+                },"rule_summary": {
+                  Row: {
+                    "result": string,"returns": number | null,"rule_id": string,"run_id": string | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    {
       foreignKeyName: "rule_results_rule_id_fkey"
       columns: ["rule_id"]
 isOneToOne: false
       referencedRelation: "rules"
       referencedColumns: ["rule_id"]
-    }
-                  ]
-                },"rule_summary": {
-                  Row: {
-                    "result": string,"returns": number | null,"rule_id": string,"run_id": string
-                  }
-                  ComputedFields: never
-                  Relationships: [
-                    {
-      foreignKeyName: "returns_run_id_fkey"
+    },{
+      foreignKeyName: "tasks_run_id_fkey"
       columns: ["run_id"]
 isOneToOne: false
       referencedRelation: "run_calendar"
       referencedColumns: ["run_id"]
     },{
-      foreignKeyName: "returns_run_id_fkey"
+      foreignKeyName: "tasks_run_id_fkey"
       columns: ["run_id"]
 isOneToOne: false
       referencedRelation: "runs"
       referencedColumns: ["run_id"]
-    },{
-      foreignKeyName: "rule_results_rule_id_fkey"
-      columns: ["rule_id"]
-isOneToOne: false
-      referencedRelation: "rules"
-      referencedColumns: ["rule_id"]
     }
                   ]
                 },"run_calendar": {
@@ -958,18 +1054,18 @@ isOneToOne: false
                   ]
                 },"run_summary": {
                   Row: {
-                    "flag": string | null,"returns": number | null,"run_id": string,"stage": string,"stage_n": number | null,"steps_done": number | null,"steps_total": number | null,"tier": string | null
+                    "flag": string | null,"returns": number | null,"run_id": string | null,"stage": string | null,"stage_n": number | null,"steps_done": number | null,"steps_total": number | null,"tier": string | null
                   }
                   ComputedFields: never
                   Relationships: [
                     {
-      foreignKeyName: "returns_run_id_fkey"
+      foreignKeyName: "tasks_run_id_fkey"
       columns: ["run_id"]
 isOneToOne: false
       referencedRelation: "run_calendar"
       referencedColumns: ["run_id"]
     },{
-      foreignKeyName: "returns_run_id_fkey"
+      foreignKeyName: "tasks_run_id_fkey"
       columns: ["run_id"]
 isOneToOne: false
       referencedRelation: "runs"
@@ -978,7 +1074,7 @@ isOneToOne: false
                   ]
                 },"task_board": {
                   Row: {
-                    "anchor": string | null,"applies_to_tier": string | null,"blocked_by": (string)[] | null,"category": string | null,"completes_stage": number | null,"customer_id": string | null,"description": string | null,"done_on": string | null,"due_date": string | null,"due_flag": string | null,"kind": string,"notes": string | null,"notice_id": string | null,"offset": number | null,"owner_id": string | null,"owner_role": string | null,"parent_id": string | null,"parent_kind": string | null,"parent_title": string | null,"priority": string | null,"raised_by": string | null,"raised_on": string | null,"registration_id": string | null,"resolution": string | null,"return_filter": string | null,"return_id": string | null,"run_id": string | null,"source": string | null,"source_ref": string | null,"status": string | null,"task_id": string,"template_id": string | null,"title": string,"waiting_on": string | null
+                    "anchor": string | null,"applies_to_tier": string | null,"blocked_by": (string)[] | null,"category": string | null,"completes_stage": number | null,"customer_id": string | null,"description": string | null,"details": NonNullable<Json>,"done_on": string | null,"due_date": string | null,"due_flag": string | null,"kind": string,"notes": string | null,"notice_id": string | null,"offset": number | null,"owner_id": string | null,"owner_role": string | null,"parent_id": string | null,"parent_kind": string | null,"parent_title": string | null,"priority": string | null,"raised_by": string | null,"raised_on": string | null,"registration_id": string | null,"resolution": string | null,"return_filter": string | null,"return_id": string | null,"run_id": string | null,"source": string | null,"source_ref": string | null,"status": string | null,"task_id": string,"template_id": string | null,"title": string,"waiting_on": string | null
                   }
                   ComputedFields: never
                   Relationships: [
@@ -994,6 +1090,18 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "customers"
       referencedColumns: ["customer_id"]
+    },{
+      foreignKeyName: "tasks_kind_fkey"
+      columns: ["kind"]
+isOneToOne: false
+      referencedRelation: "task_kinds"
+      referencedColumns: ["kind"]
+    },{
+      foreignKeyName: "tasks_kind_fkey"
+      columns: ["parent_kind"]
+isOneToOne: false
+      referencedRelation: "task_kinds"
+      referencedColumns: ["kind"]
     },{
       foreignKeyName: "tasks_notice_id_fkey"
       columns: ["notice_id"]
@@ -1030,6 +1138,18 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "return_board"
       referencedColumns: ["header_task_id"]
+    },{
+      foreignKeyName: "tasks_template_id_fkey"
+      columns: ["template_id"]
+isOneToOne: false
+      referencedRelation: "return_board"
+      referencedColumns: ["return_id"]
+    },{
+      foreignKeyName: "tasks_template_id_fkey"
+      columns: ["template_id"]
+isOneToOne: false
+      referencedRelation: "return_grid"
+      referencedColumns: ["return_id"]
     },{
       foreignKeyName: "tasks_template_id_fkey"
       columns: ["template_id"]
@@ -1081,6 +1201,12 @@ isOneToOne: false
       referencedRelation: "customers"
       referencedColumns: ["customer_id"]
     },{
+      foreignKeyName: "tasks_kind_fkey"
+      columns: ["kind"]
+isOneToOne: false
+      referencedRelation: "task_kinds"
+      referencedColumns: ["kind"]
+    },{
       foreignKeyName: "tasks_registration_id_fkey"
       columns: ["registration_id"]
 isOneToOne: false
@@ -1113,6 +1239,12 @@ isOneToOne: false
                   ComputedFields: never
                   Relationships: [
                     {
+      foreignKeyName: "tasks_kind_fkey"
+      columns: ["kind"]
+isOneToOne: false
+      referencedRelation: "task_kinds"
+      referencedColumns: ["kind"]
+    },{
       foreignKeyName: "tasks_run_id_fkey"
       columns: ["run_id"]
 isOneToOne: false
@@ -1172,7 +1304,7 @@ isOneToOne: false
 { Args: { "p_return": string }; Returns: number
                            },
 "owner_of":
-{ Args: { "p_return": string,"p_role": string,"p_task": string }; Returns: string
+{ Args: { "p_role": string,"p_task": string }; Returns: string
                            },
 "periods_for":
 { Args: { "p_frequency": string,"p_month": string }; Returns: {
@@ -1184,6 +1316,9 @@ isOneToOne: false
                            },
 "return_facts":
 { Args: { "p_return": string }; Returns: Json
+                           },
+"set_return_amounts":
+{ Args: { "p_calculated"?: number,"p_collected"?: number,"p_return": string }; Returns: undefined
                            },
 "setting":
 { Args: { "p_key": string }; Returns: string
